@@ -20,8 +20,8 @@ function createWindow() {
       nodeIntegration: true,
       contextIsolation: false
     },
-    titleBarStyle: 'hiddenInset', // macOS style
-    show: false // Don't show until ready
+    show: false, // Don't show until ready
+    titleBarStyle: 'default' // Restore native title bar for dragging
   });
 
   // Load the app
