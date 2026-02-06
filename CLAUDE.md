@@ -43,6 +43,8 @@ This is a **dual-interface TODO management application** providing both CLI and 
 
 **Status State Machine**: Tasks have 4 states (pending, in_progress, waiting, completed) with proper state transitions and business rules in the Task model.
 
+**Interactive GUI Design**: Click-to-edit task content, visual status indicators with background colors, drag-and-drop priority reordering, and context menus for quick actions.
+
 **Local-First Design**: All data stored in `~/.todo-app/tasks.db` SQLite database. No cloud dependencies.
 
 ## Data Model
@@ -90,11 +92,17 @@ SQLite database with single `tasks` table containing:
 1. Add IPC handler in `src/gui/main.js`
 2. Add renderer logic in `src/gui/renderer/`
 3. Ensure feature parity with CLI when applicable
+4. Add global function export in renderer.js if creating onclick handlers
 
 **Database Changes**:
 1. Modify schema in `src/storage/database.js`
 2. Update TaskRepository methods in `src/storage/taskRepository.js`
 3. Adjust Task model in `src/core/task.js` if needed
+
+**Task Content Updates**:
+- Use `updateTaskContent(taskId, newContent)` method for content changes
+- Automatically re-extracts URLs when content is modified
+- Updates `updated_at` timestamp for change tracking
 
 ### Import/Export System
 
@@ -115,6 +123,19 @@ Task with IN_PROGRESS status - https://example.com - IN_PROGRESS
 - Database path: `~/.todo-app/tasks.db` (cross-platform home directory)
 - URL opening: Uses Electron's `shell.openExternal()` for cross-platform browser launching
 - Build system: electron-builder configured for .app (macOS), .exe (Windows), .AppImage (Linux)
+
+### GUI Features
+
+**Task Editing**: Click the edit button (✏️) or right-click for inline editing. Uses `updateTaskContent()` method with automatic URL re-extraction.
+
+**Visual Status System**:
+- In Progress tasks: Yellow background (#fef3c7) with orange border
+- Waiting tasks: Gray background (#f3f4f6) with purple border
+- Context menu for quick status changes
+
+**Drag and Drop**: Reorder active tasks by dragging. Uses `updateTaskPriorities()` for batch priority updates.
+
+**Task Actions**: Each task has edit, status, and delete buttons. Delete requires confirmation.
 
 ### Testing Architecture
 
