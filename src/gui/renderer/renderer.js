@@ -195,7 +195,7 @@ function createTaskElement(task) {
 
         <div class="task-actions">
             <button class="edit-btn" onclick="editTask('${task.id}')" title="Edit task">
-                <span class="edit-icon">✏️</span>
+                <span class="edit-icon edit-icon-left">✏️</span>
             </button>
             <div class="task-status ${task.status}" onclick="showStatusContextMenu(event, '${task.id}')">
                 <span class="status-icon">${statusDisplay.icon}</span>

@@ -390,6 +390,11 @@ body {
     color: #2563eb;
 }
 
+/* Left-pointing edit icon */
+.edit-icon-left {
+    transform: scaleX(-1);
+}
+
 /* Delete button */
 .delete-btn {
     background: none;
