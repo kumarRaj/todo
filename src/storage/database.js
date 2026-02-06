@@ -1,0 +1,132 @@
+/**
+ * SQLite database setup and management
+ */
+
+const Database = require('better-sqlite3');
+const path = require('path');
+const fs = require('fs');
+const os = require('os');
+
+class DatabaseManager {
+  constructor() {
+    this.db = null;
+    this.dbPath = this.getDbPath();
+  }
+
+  /**
+   * Get database file path in user's home directory
+   */
+  getDbPath() {
+    const homeDir = os.homedir();
+    const appDir = path.join(homeDir, '.todo-app');
+
+    // Create app directory if it doesn't exist
+    if (!fs.existsSync(appDir)) {
+      fs.mkdirSync(appDir, { recursive: true });
+    }
+
+    return path.join(appDir, 'tasks.db');
+  }
+
+  /**
+   * Initialize database connection and create tables
+   */
+  initialize() {
+    try {
+      this.db = new Database(this.dbPath);
+      this.createTables();
+      this.createIndexes();
+      console.log(`Database initialized at: ${this.dbPath}`);
+    } catch (error) {
+      console.error('Failed to initialize database:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create the tasks table
+   */
+  createTables() {
+    const createTasksTable = `
+      CREATE TABLE IF NOT EXISTS tasks (
+        id TEXT PRIMARY KEY,
+        content TEXT NOT NULL,
+        priority INTEGER NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TEXT NOT NULL,
+        completed_at TEXT,
+        scheduled_for TEXT,
+        updated_at TEXT NOT NULL,
+        extracted_urls TEXT
+      )
+    `;
+
+    this.db.exec(createTasksTable);
+  }
+
+  /**
+   * Create database indexes for performance
+   */
+  createIndexes() {
+    const indexes = [
+      'CREATE INDEX IF NOT EXISTS idx_priority ON tasks(priority, status)',
+      'CREATE INDEX IF NOT EXISTS idx_status ON tasks(status)',
+      'CREATE INDEX IF NOT EXISTS idx_scheduled ON tasks(scheduled_for)',
+      'CREATE INDEX IF NOT EXISTS idx_completed_range ON tasks(completed_at)'
+    ];
+
+    indexes.forEach(indexSql => {
+      this.db.exec(indexSql);
+    });
+  }
+
+  /**
+   * Get database connection
+   */
+  getConnection() {
+    if (!this.db) {
+      this.initialize();
+    }
+    return this.db;
+  }
+
+  /**
+   * Close database connection
+   */
+  close() {
+    if (this.db) {
+      this.db.close();
+      this.db = null;
+    }
+  }
+
+  /**
+   * Run database migrations (for future schema updates)
+   */
+  migrate() {
+    // Placeholder for future migrations
+    const currentVersion = this.getDatabaseVersion();
+    console.log(`Database version: ${currentVersion}`);
+  }
+
+  /**
+   * Get database version for migrations
+   */
+  getDatabaseVersion() {
+    try {
+      const result = this.db.pragma('user_version');
+      return result[0].user_version;
+    } catch (error) {
+      return 0;
+    }
+  }
+
+  /**
+   * Set database version
+   */
+  setDatabaseVersion(version) {
+    this.db.pragma(`user_version = ${version}`);
+  }
+}
+
+module.exports = DatabaseManager;
