@@ -6,11 +6,19 @@ const { v4: uuidv4 } = require('uuid');
 const { format, parseISO } = require('date-fns');
 
 class Task {
+  // Valid task statuses
+  static STATUS = {
+    PENDING: 'pending',
+    IN_PROGRESS: 'in_progress',
+    WAITING: 'waiting',
+    COMPLETED: 'completed'
+  };
+
   constructor({
     id = uuidv4(),
     content,
     priority = 0,
-    status = 'pending',
+    status = Task.STATUS.PENDING,
     createdAt = new Date().toISOString(),
     completedAt = null,
     scheduledFor = null,
@@ -40,10 +48,63 @@ class Task {
    * Mark task as completed
    */
   complete() {
-    this.status = 'completed';
+    this.status = Task.STATUS.COMPLETED;
     this.completedAt = new Date().toISOString();
     this.updatedAt = new Date().toISOString();
     return this;
+  }
+
+  /**
+   * Mark task as in progress
+   */
+  startProgress() {
+    this.status = Task.STATUS.IN_PROGRESS;
+    this.updatedAt = new Date().toISOString();
+    return this;
+  }
+
+  /**
+   * Mark task as waiting
+   */
+  setWaiting() {
+    this.status = Task.STATUS.WAITING;
+    this.updatedAt = new Date().toISOString();
+    return this;
+  }
+
+  /**
+   * Change task status
+   */
+  setStatus(status) {
+    if (!Object.values(Task.STATUS).includes(status)) {
+      throw new Error(`Invalid status: ${status}`);
+    }
+
+    this.status = status;
+    this.updatedAt = new Date().toISOString();
+
+    // Set completion timestamp when marked as completed
+    if (status === Task.STATUS.COMPLETED) {
+      this.completedAt = new Date().toISOString();
+    } else if (this.completedAt) {
+      // Clear completion timestamp if changed from completed
+      this.completedAt = null;
+    }
+
+    return this;
+  }
+
+  /**
+   * Get display info for status
+   */
+  getStatusDisplay() {
+    const statusMap = {
+      [Task.STATUS.PENDING]: { icon: '⚪', label: 'New task', color: '#6b7280' },
+      [Task.STATUS.IN_PROGRESS]: { icon: '🚀', label: 'In Progress', color: '#f59e0b' },
+      [Task.STATUS.WAITING]: { icon: '🕐', label: 'Waiting', color: '#8b5cf6' },
+      [Task.STATUS.COMPLETED]: { icon: '✅', label: 'Completed', color: '#10b981' }
+    };
+    return statusMap[this.status] || statusMap[Task.STATUS.PENDING];
   }
 
   /**

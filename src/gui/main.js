@@ -212,6 +212,24 @@ ipcMain.handle('delete-task', async (event, taskId) => {
   }
 });
 
+ipcMain.handle('get-all-tasks', async () => {
+  try {
+    return taskRepo.getAllTasks();
+  } catch (error) {
+    console.error('Error getting all tasks:', error);
+    return [];
+  }
+});
+
+ipcMain.handle('change-task-status', async (event, taskId, newStatus) => {
+  try {
+    return taskRepo.changeTaskStatus(taskId, newStatus);
+  } catch (error) {
+    console.error('Error changing task status:', error);
+    throw error;
+  }
+});
+
 ipcMain.handle('open-url', async (event, url) => {
   try {
     await shell.openExternal(url);

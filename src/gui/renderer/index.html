@@ -8,16 +8,6 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Header -->
-        <header class="app-header">
-            <h1>TODO</h1>
-            <div class="view-controls">
-                <button class="view-btn active" data-view="pending">Pending</button>
-                <button class="view-btn" data-view="all">All</button>
-                <button class="view-btn" data-view="completed">Completed</button>
-            </div>
-        </header>
-
         <!-- Add Task Section -->
         <section class="add-task-section">
             <div class="input-container">
@@ -27,27 +17,70 @@
                     placeholder="Add a new task..."
                     autofocus
                 >
-                <input
-                    type="date"
-                    id="schedule-input"
-                    title="Schedule task (optional)"
-                >
                 <button id="add-btn" class="add-btn">Add</button>
             </div>
         </section>
 
-        <!-- Task List -->
-        <main class="task-list-container">
-            <ul id="task-list" class="task-list">
-                <!-- Tasks will be dynamically inserted here -->
-            </ul>
-            <div id="empty-state" class="empty-state hidden">
-                <p>📝 No tasks found</p>
+        <!-- Task Sections -->
+        <main class="task-sections">
+            <!-- Active Tasks Section -->
+            <div class="task-section">
+                <div class="section-header" onclick="toggleSection('active')">
+                    <div class="section-title-container">
+                        <span class="section-toggle">▼</span>
+                        <span class="section-title">Active tasks</span>
+                        <span class="task-count" id="active-count">0</span>
+                    </div>
+                    <div class="section-status">Status</div>
+                </div>
+                <div class="section-content" id="active-content">
+                    <ul class="task-list" id="active-tasks">
+                        <!-- Active tasks will be rendered here -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Completed Tasks Section -->
+            <div class="task-section collapsed">
+                <div class="section-header" onclick="toggleSection('completed')">
+                    <div class="section-title-container">
+                        <span class="section-toggle">▶</span>
+                        <span class="section-title">Completed tasks</span>
+                        <span class="task-count" id="completed-count">0</span>
+                    </div>
+                    <div class="section-status">Status</div>
+                </div>
+                <div class="section-content collapsed" id="completed-content">
+                    <ul class="task-list" id="completed-tasks">
+                        <!-- Completed tasks will be rendered here -->
+                    </ul>
+                </div>
             </div>
         </main>
 
+        <!-- Context Menu -->
+        <div id="context-menu" class="context-menu hidden">
+            <div class="context-menu-item" onclick="changeTaskStatus(contextTaskId, 'pending')">
+                <span class="status-icon">⚪</span>
+                Mark as Pending
+            </div>
+            <div class="context-menu-item" onclick="changeTaskStatus(contextTaskId, 'in_progress')">
+                <span class="status-icon">🚀</span>
+                Mark as In Progress
+            </div>
+            <div class="context-menu-item" onclick="changeTaskStatus(contextTaskId, 'waiting')">
+                <span class="status-icon">🕐</span>
+                Mark as Waiting
+            </div>
+            <div class="context-menu-item" onclick="changeTaskStatus(contextTaskId, 'completed')">
+                <span class="status-icon">✅</span>
+                Mark as Completed
+            </div>
+        </div>
+
         <!-- Loading State -->
         <div id="loading" class="loading hidden">
+            <div class="loading-spinner"></div>
             <p>Loading tasks...</p>
         </div>
     </div>

@@ -74,6 +74,54 @@ class TaskRepository {
   }
 
   /**
+   * Get all active tasks (pending, in_progress, waiting) ordered by priority
+   */
+  getAllActiveTasks() {
+    if (!this.db) this.initialize();
+
+    const selectStmt = this.db.prepare(`
+      SELECT * FROM tasks
+      WHERE status IN ('pending', 'in_progress', 'waiting')
+      ORDER BY priority ASC
+    `);
+
+    const rows = selectStmt.all();
+    return rows.map(row => Task.fromJSON(row));
+  }
+
+  /**
+   * Get tasks by specific status
+   */
+  getTasksByStatus(status) {
+    if (!this.db) this.initialize();
+
+    const selectStmt = this.db.prepare(`
+      SELECT * FROM tasks
+      WHERE status = ?
+      ORDER BY
+        CASE WHEN status = 'completed' THEN completed_at ELSE updated_at END DESC
+    `);
+
+    const rows = selectStmt.all(status);
+    return rows.map(row => Task.fromJSON(row));
+  }
+
+  /**
+   * Get tasks grouped by status
+   */
+  getTasksGroupedByStatus() {
+    if (!this.db) this.initialize();
+
+    return {
+      active: this.getAllActiveTasks(),
+      pending: this.getTasksByStatus(Task.STATUS.PENDING),
+      in_progress: this.getTasksByStatus(Task.STATUS.IN_PROGRESS),
+      waiting: this.getTasksByStatus(Task.STATUS.WAITING),
+      completed: this.getTasksByStatus(Task.STATUS.COMPLETED)
+    };
+  }
+
+  /**
    * Get completed tasks in date range
    */
   getCompletedInRange(startDate, endDate) {
@@ -116,6 +164,42 @@ class TaskRepository {
     this.updateTask(task);
 
     return task;
+  }
+
+  /**
+   * Change task status
+   */
+  changeTaskStatus(taskId, status) {
+    if (!this.db) this.initialize();
+
+    const task = this.getTaskById(taskId);
+    if (!task) return null;
+
+    task.setStatus(status);
+    this.updateTask(task);
+
+    return task;
+  }
+
+  /**
+   * Mark task as in progress
+   */
+  markInProgress(taskId) {
+    return this.changeTaskStatus(taskId, Task.STATUS.IN_PROGRESS);
+  }
+
+  /**
+   * Mark task as waiting
+   */
+  markWaiting(taskId) {
+    return this.changeTaskStatus(taskId, Task.STATUS.WAITING);
+  }
+
+  /**
+   * Mark task as pending
+   */
+  markPending(taskId) {
+    return this.changeTaskStatus(taskId, Task.STATUS.PENDING);
   }
 
   /**

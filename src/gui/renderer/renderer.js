@@ -1,14 +1,20 @@
 /**
- * Electron renderer process for desktop GUI
+ * Electron renderer process for professional desktop GUI
  */
 
 const { ipcRenderer } = require('electron');
 
 // DOM elements
-let taskInput, scheduleInput, addBtn, taskList, emptyState, loading;
-let viewButtons = [];
-let currentView = 'pending';
+let taskInput, addBtn, loading;
+let activeTasksList, completedTasksList;
+let activeCount, completedCount;
+let contextMenu;
+let contextTaskId = null;
+
+// Task data
 let tasks = [];
+let activeTasks = [];
+let completedTasks = [];
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -19,12 +25,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initializeElements() {
     taskInput = document.getElementById('task-input');
-    scheduleInput = document.getElementById('schedule-input');
     addBtn = document.getElementById('add-btn');
-    taskList = document.getElementById('task-list');
-    emptyState = document.getElementById('empty-state');
     loading = document.getElementById('loading');
-    viewButtons = document.querySelectorAll('.view-btn');
+
+    activeTasksList = document.getElementById('active-tasks');
+    completedTasksList = document.getElementById('completed-tasks');
+
+    activeCount = document.getElementById('active-count');
+    completedCount = document.getElementById('completed-count');
+
+    contextMenu = document.getElementById('context-menu');
 }
 
 function setupEventListeners() {
@@ -36,12 +46,11 @@ function setupEventListeners() {
         }
     });
 
-    // View switching
-    viewButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const view = btn.dataset.view;
-            switchView(view);
-        });
+    // Hide context menu when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!contextMenu.contains(e.target)) {
+            hideContextMenu();
+        }
     });
 
     // IPC listeners from main process
@@ -57,17 +66,14 @@ async function handleAddTask() {
     const content = taskInput.value.trim();
     if (!content) return;
 
-    const scheduledFor = scheduleInput.value || null;
-
     try {
         addBtn.disabled = true;
         addBtn.textContent = 'Adding...';
 
-        await ipcRenderer.invoke('create-task', content, scheduledFor);
+        await ipcRenderer.invoke('create-task', content);
 
-        // Clear inputs
+        // Clear input
         taskInput.value = '';
-        scheduleInput.value = '';
 
         // Reload tasks
         await loadTasks();
@@ -83,201 +89,205 @@ async function handleAddTask() {
     }
 }
 
-function switchView(view) {
-    currentView = view;
-
-    // Update active button
-    viewButtons.forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.view === view);
-    });
-
-    // Reload tasks with new filter
-    loadTasks();
-}
-
 async function loadTasks() {
     try {
         showLoading(true);
-        tasks = await ipcRenderer.invoke('get-tasks', currentView);
+
+        // Get all tasks and separate by status
+        const allTasks = await ipcRenderer.invoke('get-all-tasks');
+
+        activeTasks = allTasks.filter(task =>
+            task.status === 'pending' ||
+            task.status === 'in_progress' ||
+            task.status === 'waiting'
+        );
+
+        completedTasks = allTasks.filter(task => task.status === 'completed');
+
         renderTasks();
+        updateTaskCounts();
+
     } catch (error) {
         console.error('Error loading tasks:', error);
-        showEmptyState('Error loading tasks');
+        showError('Error loading tasks');
     } finally {
         showLoading(false);
     }
 }
 
 function renderTasks() {
-    taskList.innerHTML = '';
-
-    if (tasks.length === 0) {
-        showEmptyState();
-        return;
-    }
-
-    hideEmptyState();
-
-    tasks.forEach((task, index) => {
-        const taskElement = createTaskElement(task, index);
-        taskList.appendChild(taskElement);
+    // Render active tasks
+    activeTasksList.innerHTML = '';
+    activeTasks.forEach(task => {
+        const taskElement = createTaskElement(task);
+        activeTasksList.appendChild(taskElement);
     });
 
-    // Setup drag and drop for pending tasks
-    if (currentView === 'pending' || currentView === 'all') {
-        setupDragAndDrop();
-    }
+    // Render completed tasks
+    completedTasksList.innerHTML = '';
+    completedTasks.forEach(task => {
+        const taskElement = createTaskElement(task);
+        completedTasksList.appendChild(taskElement);
+    });
+
+    // Setup drag and drop for active tasks
+    setupDragAndDrop();
 }
 
-function createTaskElement(task, index) {
+function createTaskElement(task) {
     const li = document.createElement('li');
     li.className = `task-item ${task.status}`;
     li.dataset.taskId = task.id;
-    li.draggable = task.status === 'pending';
+    li.draggable = task.status !== 'completed';
 
-    const priorityNumber = task.status === 'pending' ? index + 1 : '';
-    const isCompleted = task.status === 'completed';
+    const statusDisplay = getStatusDisplay(task.status);
 
-    // Format dates
-    const scheduledDate = task.scheduledFor ? formatTaskDate(task.scheduledFor) : null;
-    const completedDate = task.completedAt ? formatTaskDate(task.completedAt, true) : null;
+    // Create task metadata elements
+    const metaElements = [];
+
+    // Add ASAP tag for high priority tasks (example logic)
+    if (task.priority === 0 && task.status !== 'completed') {
+        metaElements.push(`<span class="task-tag">ASAP</span>`);
+    }
+
+    // Add blocked tag if task content contains "blocked"
+    if (task.content.toLowerCase().includes('blocked')) {
+        metaElements.push(`<span class="task-tag blocked">blocked</span>`);
+    }
+
+    // Add progress indicator if task has subtasks (example: "1/3", "0/4")
+    const progressMatch = task.content.match(/(\d+)\/(\d+)/);
+    if (progressMatch) {
+        metaElements.push(`<span class="task-progress">${progressMatch[0]}</span>`);
+    }
+
+    // Add comment count if task has URLs (using URLs as proxy for engagement)
+    if (task.extractedUrls && task.extractedUrls.length > 0) {
+        const commentCount = Math.min(task.extractedUrls.length * 2, 7); // Mock comment count
+        metaElements.push(`
+            <div class="task-comments">
+                💬${commentCount}
+            </div>
+        `);
+    }
 
     li.innerHTML = `
-        <div class="task-controls">
-            <div class="task-priority">${priorityNumber}</div>
-            <div class="task-checkbox ${isCompleted ? 'completed' : ''}"
-                 onclick="toggleTaskComplete('${task.id}')">
-            </div>
-        </div>
-
         <div class="task-content-container">
             <div class="task-content">${escapeHtml(task.content)}</div>
 
-            <div class="task-meta">
-                ${scheduledDate ? `<div class="task-date ${getDateClass(task.scheduledFor)}">${scheduledDate}</div>` : ''}
-                ${completedDate ? `<div class="task-date">Completed ${completedDate}</div>` : ''}
-            </div>
+            ${metaElements.length > 0 ? `
+                <div class="task-meta">
+                    ${metaElements.join('')}
+                </div>
+            ` : ''}
 
             ${task.extractedUrls && task.extractedUrls.length > 0 ? `
                 <div class="task-urls">
                     ${task.extractedUrls.map(url =>
                         `<a href="#" class="task-url" onclick="openUrl('${url}')" title="${url}">
-                            ${shortenUrl(url)}
+                            🔗 ${shortenUrl(url)}
                         </a>`
                     ).join('')}
                 </div>
             ` : ''}
         </div>
 
-        ${task.status === 'pending' ? `
-            <div class="task-actions">
-                <button class="task-action-btn" onclick="moveTask('${task.id}', 'up')" title="Move up">↑</button>
-                <button class="task-action-btn" onclick="moveTask('${task.id}', 'down')" title="Move down">↓</button>
-            </div>
-        ` : ''}
+        <div class="task-status ${task.status}" onclick="showStatusContextMenu(event, '${task.id}')">
+            <span class="status-icon">${statusDisplay.icon}</span>
+            <span>${statusDisplay.label}</span>
+        </div>
     `;
 
     return li;
 }
 
-function formatTaskDate(dateString, includeTime = false) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const taskDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+function getStatusDisplay(status) {
+    const statusMap = {
+        'pending': { icon: '⚪', label: 'New task' },
+        'in_progress': { icon: '🚀', label: 'In Progress' },
+        'waiting': { icon: '🕐', label: 'Waiting' },
+        'completed': { icon: '✅', label: 'Completed' }
+    };
+    return statusMap[status] || statusMap['pending'];
+}
 
-    if (includeTime) {
-        return date.toLocaleDateString();
+function updateTaskCounts() {
+    activeCount.textContent = activeTasks.length;
+    completedCount.textContent = completedTasks.length;
+}
+
+function toggleSection(sectionName) {
+    const section = document.querySelector(`#${sectionName}-content`).parentElement;
+    const content = document.querySelector(`#${sectionName}-content`);
+
+    section.classList.toggle('collapsed');
+    content.classList.toggle('collapsed');
+
+    // Update max-height for smooth animation
+    if (content.classList.contains('collapsed')) {
+        content.style.maxHeight = '0';
+    } else {
+        content.style.maxHeight = content.scrollHeight + 'px';
+
+        // Remove max-height after animation completes
+        setTimeout(() => {
+            if (!content.classList.contains('collapsed')) {
+                content.style.maxHeight = 'none';
+            }
+        }, 300);
     }
-
-    const diffTime = taskDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return '📅 Today';
-    if (diffDays === 1) return '📅 Tomorrow';
-    if (diffDays === -1) return '📅 Yesterday';
-    if (diffDays < 0) return `📅 ${Math.abs(diffDays)} days ago`;
-    if (diffDays <= 7) return `📅 In ${diffDays} days`;
-
-    return '📅 ' + date.toLocaleDateString();
 }
 
-function getDateClass(dateString) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const taskDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+function showStatusContextMenu(event, taskId) {
+    event.preventDefault();
+    event.stopPropagation();
 
-    const diffTime = taskDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    contextTaskId = taskId;
 
-    if (diffDays === 0) return 'today';
-    if (diffDays < 0) return 'overdue';
-    return '';
-}
+    const rect = event.target.closest('.task-status').getBoundingClientRect();
 
-function shortenUrl(url) {
-    if (url.length <= 40) return url;
+    contextMenu.style.left = rect.left + 'px';
+    contextMenu.style.top = (rect.bottom + 5) + 'px';
+    contextMenu.classList.remove('hidden');
 
-    try {
-        const urlObj = new URL(url);
-        const domain = urlObj.hostname;
-        const path = urlObj.pathname + urlObj.search;
+    // Adjust position if menu would go off-screen
+    setTimeout(() => {
+        const menuRect = contextMenu.getBoundingClientRect();
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
 
-        if (domain.length >= 37) {
-            return domain.substring(0, 37) + '...';
+        if (menuRect.right > windowWidth) {
+            contextMenu.style.left = (rect.right - menuRect.width) + 'px';
         }
 
-        const availableLength = 40 - domain.length - 3;
-        if (path.length > availableLength) {
-            return domain + path.substring(0, availableLength) + '...';
+        if (menuRect.bottom > windowHeight) {
+            contextMenu.style.top = (rect.top - menuRect.height - 5) + 'px';
         }
-
-        return url;
-    } catch {
-        return url.substring(0, 37) + '...';
-    }
+    }, 0);
 }
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+function hideContextMenu() {
+    contextMenu.classList.add('hidden');
+    contextTaskId = null;
 }
 
-async function toggleTaskComplete(taskId) {
+async function changeTaskStatus(taskId, newStatus) {
+    if (!taskId) return;
+
     try {
-        await ipcRenderer.invoke('complete-task', taskId);
+        await ipcRenderer.invoke('change-task-status', taskId, newStatus);
         await loadTasks();
+        hideContextMenu();
     } catch (error) {
-        console.error('Error completing task:', error);
-        alert('Error completing task: ' + error.message);
-    }
-}
-
-async function moveTask(taskId, direction) {
-    try {
-        await ipcRenderer.invoke('move-task', taskId, direction);
-        await loadTasks();
-    } catch (error) {
-        console.error('Error moving task:', error);
-        alert('Error moving task: ' + error.message);
-    }
-}
-
-async function openUrl(url) {
-    try {
-        await ipcRenderer.invoke('open-url', url);
-    } catch (error) {
-        console.error('Error opening URL:', error);
-        alert('Error opening URL: ' + error.message);
+        console.error('Error changing task status:', error);
+        alert('Error changing task status: ' + error.message);
     }
 }
 
 function setupDragAndDrop() {
-    const taskItems = document.querySelectorAll('.task-item[draggable="true"]');
+    const activeTaskItems = activeTasksList.querySelectorAll('.task-item[draggable="true"]');
 
-    taskItems.forEach(item => {
+    activeTaskItems.forEach(item => {
         item.addEventListener('dragstart', handleDragStart);
         item.addEventListener('dragover', handleDragOver);
         item.addEventListener('drop', handleDrop);
@@ -298,12 +308,12 @@ function handleDragOver(e) {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
 
-    const afterElement = getDragAfterElement(taskList, e.clientY);
+    const afterElement = getDragAfterElement(activeTasksList, e.clientY);
 
     if (afterElement == null) {
-        taskList.appendChild(draggedElement);
+        activeTasksList.appendChild(draggedElement);
     } else {
-        taskList.insertBefore(draggedElement, afterElement);
+        activeTasksList.insertBefore(draggedElement, afterElement);
     }
 }
 
@@ -336,11 +346,11 @@ function getDragAfterElement(container, y) {
 }
 
 async function updateTaskPriorities() {
-    const taskItems = [...document.querySelectorAll('.task-item[draggable="true"]')];
+    const taskItems = [...activeTasksList.querySelectorAll('.task-item[draggable="true"]')];
     const newOrder = taskItems.map(item => item.dataset.taskId);
 
     // Find which task moved and in which direction
-    const oldOrder = tasks.filter(t => t.status === 'pending').map(t => t.id);
+    const oldOrder = activeTasks.map(t => t.id);
 
     for (let i = 0; i < newOrder.length; i++) {
         if (newOrder[i] !== oldOrder[i]) {
@@ -365,26 +375,53 @@ async function updateTaskPriorities() {
     await loadTasks();
 }
 
-function showLoading(show) {
-    if (show) {
-        loading.classList.remove('hidden');
-        taskList.classList.add('hidden');
-        emptyState.classList.add('hidden');
-    } else {
-        loading.classList.add('hidden');
-        taskList.classList.remove('hidden');
+async function openUrl(url) {
+    try {
+        await ipcRenderer.invoke('open-url', url);
+    } catch (error) {
+        console.error('Error opening URL:', error);
+        alert('Error opening URL: ' + error.message);
     }
 }
 
-function showEmptyState(message = '📝 No tasks found') {
-    emptyState.querySelector('p').textContent = message;
-    emptyState.classList.remove('hidden');
-    taskList.classList.add('hidden');
+function shortenUrl(url) {
+    if (url.length <= 40) return url;
+
+    try {
+        const urlObj = new URL(url);
+        const domain = urlObj.hostname.replace('www.', '');
+
+        if (domain.includes('github.com')) {
+            const parts = urlObj.pathname.split('/');
+            if (parts.length >= 3) {
+                return `${parts[1]}/${parts[2]}`;
+            }
+        }
+
+        return domain;
+    } catch {
+        return url.substring(0, 30) + '...';
+    }
 }
 
-function hideEmptyState() {
-    emptyState.classList.add('hidden');
-    taskList.classList.remove('hidden');
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function showLoading(show) {
+    if (show) {
+        loading.classList.remove('hidden');
+    } else {
+        loading.classList.add('hidden');
+    }
+}
+
+function showError(message) {
+    // Simple error display - could be enhanced with better UI
+    console.error(message);
+    alert(message);
 }
 
 async function handleImportTasks() {
@@ -392,8 +429,7 @@ async function handleImportTasks() {
         const result = await ipcRenderer.invoke('import-tasks');
 
         if (!result) {
-            // User canceled
-            return;
+            return; // User canceled
         }
 
         if (!result.success) {
@@ -401,14 +437,11 @@ async function handleImportTasks() {
             return;
         }
 
-        // Show success message
         const message = `Successfully imported ${result.count} tasks!\n` +
                        `📋 ${result.pending} pending\n` +
                        `✅ ${result.completed} completed`;
 
         alert(message);
-
-        // Reload tasks to show imported tasks
         await loadTasks();
 
     } catch (error) {
@@ -419,18 +452,13 @@ async function handleImportTasks() {
 
 async function handleExportTasks() {
     try {
-        // Show export format dialog
         const format = await showExportFormatDialog();
         if (!format) return;
 
-        const includeCompleted = format.includeCompleted;
-        const fileFormat = format.format;
-
-        const result = await ipcRenderer.invoke('export-tasks', fileFormat, includeCompleted);
+        const result = await ipcRenderer.invoke('export-tasks', format.format, format.includeCompleted);
 
         if (!result) {
-            // User canceled
-            return;
+            return; // User canceled
         }
 
         if (!result.success) {
@@ -438,7 +466,6 @@ async function handleExportTasks() {
             return;
         }
 
-        // Show success message
         let message = `Successfully exported to:\n${result.filePath}\n\n`;
 
         if (result.pending !== undefined) {
@@ -457,7 +484,6 @@ async function handleExportTasks() {
 
 function showExportFormatDialog() {
     return new Promise((resolve) => {
-        // Create a simple dialog overlay
         const overlay = document.createElement('div');
         overlay.style.cssText = `
             position: fixed;
@@ -476,17 +502,17 @@ function showExportFormatDialog() {
         dialog.style.cssText = `
             background: white;
             padding: 24px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            min-width: 300px;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            min-width: 320px;
         `;
 
         dialog.innerHTML = `
-            <h3 style="margin: 0 0 16px 0; font-size: 18px;">Export Tasks</h3>
+            <h3 style="margin: 0 0 20px 0; font-size: 18px; font-weight: 600;">Export Tasks</h3>
 
-            <div style="margin-bottom: 16px;">
-                <label style="display: block; margin-bottom: 8px; font-weight: 500;">Format:</label>
-                <select id="format-select" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 14px;">Format:</label>
+                <select id="format-select" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
                     <option value="txt">Text (.txt)</option>
                     <option value="json">JSON (.json)</option>
                     <option value="csv">CSV (.csv)</option>
@@ -494,23 +520,22 @@ function showExportFormatDialog() {
                 </select>
             </div>
 
-            <div style="margin-bottom: 20px;">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                    <input type="checkbox" id="include-completed" checked>
+            <div style="margin-bottom: 24px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+                    <input type="checkbox" id="include-completed" checked style="width: 16px; height: 16px;">
                     <span>Include completed tasks</span>
                 </label>
             </div>
 
-            <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                <button id="cancel-btn" style="padding: 8px 16px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer;">Cancel</button>
-                <button id="export-btn" style="padding: 8px 16px; border: none; background: #007AFF; color: white; border-radius: 4px; cursor: pointer;">Export</button>
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <button id="cancel-btn" style="padding: 10px 20px; border: 2px solid #e5e7eb; background: white; border-radius: 8px; cursor: pointer; font-size: 14px;">Cancel</button>
+                <button id="export-btn" style="padding: 10px 20px; border: none; background: #3b82f6; color: white; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">Export</button>
             </div>
         `;
 
         overlay.appendChild(dialog);
         document.body.appendChild(overlay);
 
-        // Event handlers
         dialog.querySelector('#cancel-btn').addEventListener('click', () => {
             document.body.removeChild(overlay);
             resolve(null);
@@ -524,7 +549,6 @@ function showExportFormatDialog() {
             resolve({ format, includeCompleted });
         });
 
-        // Close on overlay click
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) {
                 document.body.removeChild(overlay);
@@ -535,6 +559,7 @@ function showExportFormatDialog() {
 }
 
 // Global functions for onclick handlers
-window.toggleTaskComplete = toggleTaskComplete;
-window.moveTask = moveTask;
+window.toggleSection = toggleSection;
+window.showStatusContextMenu = showStatusContextMenu;
+window.changeTaskStatus = changeTaskStatus;
 window.openUrl = openUrl;
