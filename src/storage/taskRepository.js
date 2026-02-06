@@ -227,6 +227,37 @@ class TaskRepository {
   }
 
   /**
+   * Update task content
+   */
+  updateTaskContent(taskId, newContent) {
+    if (!this.db) this.initialize();
+
+    const task = this.getTaskById(taskId);
+    if (!task) return null;
+
+    // Update the task content and extract URLs
+    task.content = newContent;
+    task.extractedUrls = task.extractUrls(newContent);
+    task.updatedAt = new Date().toISOString();
+
+    // Update in database
+    const updateStmt = this.db.prepare(`
+      UPDATE tasks
+      SET content = ?, extracted_urls = ?, updated_at = ?
+      WHERE id = ?
+    `);
+
+    updateStmt.run(
+      task.content,
+      JSON.stringify(task.extractedUrls),
+      task.updatedAt,
+      taskId
+    );
+
+    return task;
+  }
+
+  /**
    * Schedule a task
    */
   scheduleTask(taskId, date) {

@@ -194,6 +194,9 @@ function createTaskElement(task) {
         </div>
 
         <div class="task-actions">
+            <button class="edit-btn" onclick="editTask('${task.id}')" title="Edit task">
+                <span class="edit-icon">✏️</span>
+            </button>
             <div class="task-status ${task.status}" onclick="showStatusContextMenu(event, '${task.id}')">
                 <span class="status-icon">${statusDisplay.icon}</span>
                 <span>${statusDisplay.label}</span>
@@ -288,6 +291,80 @@ async function changeTaskStatus(taskId, newStatus) {
         console.error('Error changing task status:', error);
         alert('Error changing task status: ' + error.message);
     }
+}
+
+async function editTask(taskId) {
+    if (!taskId) return;
+
+    hideContextMenu();
+
+    // Find the task element
+    const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
+    if (!taskElement) return;
+
+    // Find the task content element
+    const taskContentElement = taskElement.querySelector('.task-content');
+    if (!taskContentElement || taskElement.classList.contains('editing')) return;
+
+    // Get current task content
+    const currentContent = taskContentElement.textContent.trim();
+
+    // Create input element
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = currentContent;
+    input.className = 'task-edit-input';
+
+    // Replace content with input
+    taskContentElement.style.display = 'none';
+    taskContentElement.parentNode.insertBefore(input, taskContentElement.nextSibling);
+    taskElement.classList.add('editing');
+
+    // Focus and select text
+    input.focus();
+    input.select();
+
+    // Handle save
+    const saveEdit = async () => {
+        const newContent = input.value.trim();
+
+        if (newContent && newContent !== currentContent) {
+            try {
+                await ipcRenderer.invoke('update-task-content', taskId, newContent);
+                await loadTasks();
+            } catch (error) {
+                console.error('Error updating task:', error);
+                alert('Error updating task: ' + error.message);
+                // Revert changes
+                taskContentElement.style.display = '';
+                input.remove();
+                taskElement.classList.remove('editing');
+            }
+        } else {
+            // Cancel edit
+            taskContentElement.style.display = '';
+            input.remove();
+            taskElement.classList.remove('editing');
+        }
+    };
+
+    // Handle cancel
+    const cancelEdit = () => {
+        taskContentElement.style.display = '';
+        input.remove();
+        taskElement.classList.remove('editing');
+    };
+
+    // Event listeners
+    input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            saveEdit();
+        } else if (e.key === 'Escape') {
+            cancelEdit();
+        }
+    });
+
+    input.addEventListener('blur', saveEdit);
 }
 
 async function deleteTask(taskId) {
@@ -592,5 +669,6 @@ function showExportFormatDialog() {
 window.toggleSection = toggleSection;
 window.showStatusContextMenu = showStatusContextMenu;
 window.changeTaskStatus = changeTaskStatus;
+window.editTask = editTask;
 window.deleteTask = deleteTask;
 window.openUrl = openUrl;

@@ -239,6 +239,15 @@ ipcMain.handle('update-task-priorities', async (event, taskIdOrder) => {
   }
 });
 
+ipcMain.handle('update-task-content', async (event, taskId, newContent) => {
+  try {
+    return taskRepo.updateTaskContent(taskId, newContent);
+  } catch (error) {
+    console.error('Error updating task content:', error);
+    throw error;
+  }
+});
+
 ipcMain.handle('open-url', async (event, url) => {
   try {
     await shell.openExternal(url);

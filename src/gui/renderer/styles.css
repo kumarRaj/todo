@@ -348,6 +348,30 @@ body {
     text-align: center;
 }
 
+/* Edit button */
+.edit-btn {
+    background: none;
+    border: none;
+    padding: 6px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+}
+
+.edit-btn:hover {
+    background-color: #f0f9ff;
+    opacity: 1;
+}
+
+.edit-btn .edit-icon {
+    font-size: 14px;
+    color: #2563eb;
+}
+
 /* Delete button */
 .delete-btn {
     background: none;
@@ -355,7 +379,7 @@ body {
     padding: 6px;
     cursor: pointer;
     border-radius: 4px;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -370,6 +394,29 @@ body {
 .delete-btn .delete-icon {
     font-size: 14px;
     color: #dc2626;
+}
+
+/* Task edit input */
+.task-edit-input {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #1f2937;
+    background-color: #ffffff;
+    border: 2px solid #3b82f6;
+    border-radius: 6px;
+    outline: none;
+    font-family: inherit;
+    margin: 4px 0;
+}
+
+.task-edit-input:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.task-item.editing .task-content {
+    display: none !important;
 }
 
 /* Context menu */
