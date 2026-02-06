@@ -2,9 +2,10 @@
  * Electron main process
  */
 
-const { app, BrowserWindow, Menu, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, shell, dialog } = require('electron');
 const path = require('path');
 const TaskRepository = require('../storage/taskRepository');
+const ImportExportManager = require('../utils/importExport');
 
 // Keep a global reference of the window object
 let mainWindow;
@@ -217,5 +218,103 @@ ipcMain.handle('open-url', async (event, url) => {
   } catch (error) {
     console.error('Error opening URL:', error);
     throw error;
+  }
+});
+
+// Import tasks
+ipcMain.handle('import-tasks', async () => {
+  try {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Import Tasks',
+      filters: [
+        { name: 'Text files', extensions: ['txt'] },
+        { name: 'JSON files', extensions: ['json'] },
+        { name: 'All files', extensions: ['*'] }
+      ],
+      properties: ['openFile']
+    });
+
+    if (result.canceled) return null;
+
+    const filePath = result.filePaths[0];
+    const importManager = new ImportExportManager();
+    const extension = path.extname(filePath).toLowerCase();
+
+    let imported;
+    if (extension === '.txt') {
+      imported = await importManager.importFromTextFile(filePath);
+    } else if (extension === '.json') {
+      imported = await importManager.importFromJSON(filePath);
+    } else {
+      throw new Error('Unsupported file format. Use .txt or .json files.');
+    }
+
+    return {
+      success: true,
+      count: imported.length,
+      pending: imported.filter(t => t.status === 'pending').length,
+      completed: imported.filter(t => t.status === 'completed').length
+    };
+  } catch (error) {
+    console.error('Error importing tasks:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Export tasks
+ipcMain.handle('export-tasks', async (event, format = 'txt', includeCompleted = true) => {
+  try {
+    const filters = [];
+    const defaultPath = `todo-export-${new Date().toISOString().split('T')[0]}`;
+
+    switch (format) {
+      case 'txt':
+        filters.push({ name: 'Text files', extensions: ['txt'] });
+        break;
+      case 'json':
+        filters.push({ name: 'JSON files', extensions: ['json'] });
+        break;
+      case 'csv':
+        filters.push({ name: 'CSV files', extensions: ['csv'] });
+        break;
+      case 'md':
+        filters.push({ name: 'Markdown files', extensions: ['md'] });
+        break;
+      default:
+        filters.push({ name: 'Text files', extensions: ['txt'] });
+    }
+
+    filters.push({ name: 'All files', extensions: ['*'] });
+
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: 'Export Tasks',
+      defaultPath: defaultPath + '.' + format,
+      filters: filters
+    });
+
+    if (result.canceled) return null;
+
+    const filePath = result.filePath;
+    const importManager = new ImportExportManager();
+
+    let exportResult;
+    if (format === 'txt') {
+      exportResult = await importManager.exportToTextFile(filePath, includeCompleted);
+    } else if (format === 'json') {
+      exportResult = await importManager.exportToJSON(filePath, includeCompleted);
+    } else if (format === 'csv') {
+      exportResult = await importManager.exportToCSV(filePath, includeCompleted);
+    } else if (format === 'md') {
+      exportResult = await importManager.exportToMarkdown(filePath, includeCompleted);
+    }
+
+    return {
+      success: true,
+      filePath: filePath,
+      ...exportResult
+    };
+  } catch (error) {
+    console.error('Error exporting tasks:', error);
+    return { success: false, error: error.message };
   }
 });

@@ -8,6 +8,7 @@ const { Command } = require('commander');
 const TaskRepository = require('../storage/taskRepository');
 const { formatDate, parseDate } = require('../utils/dateHelpers');
 const { openUrl } = require('../utils/urlHelpers');
+const ImportExportManager = require('../utils/importExport');
 
 const program = new Command();
 const taskRepo = new TaskRepository();
@@ -199,6 +200,76 @@ program
       });
     } catch (error) {
       console.error('❌ Error opening URLs:', error.message);
+      process.exit(1);
+    }
+  });
+
+// Import tasks
+program
+  .command('import <file>')
+  .description('Import tasks from a file (supports .txt, .json)')
+  .action(async (filePath) => {
+    try {
+      const importManager = new ImportExportManager();
+      const extension = filePath.split('.').pop().toLowerCase();
+
+      let imported;
+      if (extension === 'txt') {
+        imported = await importManager.importFromTextFile(filePath);
+      } else if (extension === 'json') {
+        imported = await importManager.importFromJSON(filePath);
+      } else {
+        console.error('❌ Unsupported file format. Use .txt or .json files.');
+        process.exit(1);
+      }
+
+      console.log(`✅ Imported ${imported.length} tasks from ${filePath}`);
+
+      // Show summary
+      const pending = imported.filter(t => t.status === 'pending').length;
+      const completed = imported.filter(t => t.status === 'completed').length;
+      console.log(`📋 ${pending} pending, ✅ ${completed} completed`);
+    } catch (error) {
+      console.error('❌ Error importing tasks:', error.message);
+      process.exit(1);
+    }
+  });
+
+// Export tasks
+program
+  .command('export <file>')
+  .description('Export tasks to a file (supports .txt, .json, .csv, .md)')
+  .option('-c, --completed', 'Include completed tasks (default: true)')
+  .option('--no-completed', 'Exclude completed tasks')
+  .action(async (filePath, options) => {
+    try {
+      const importManager = new ImportExportManager();
+      const extension = filePath.split('.').pop().toLowerCase();
+      const includeCompleted = options.completed !== false;
+
+      let result;
+      if (extension === 'txt') {
+        result = await importManager.exportToTextFile(filePath, includeCompleted);
+      } else if (extension === 'json') {
+        result = await importManager.exportToJSON(filePath, includeCompleted);
+      } else if (extension === 'csv') {
+        result = await importManager.exportToCSV(filePath, includeCompleted);
+      } else if (extension === 'md') {
+        result = await importManager.exportToMarkdown(filePath, includeCompleted);
+      } else {
+        console.error('❌ Unsupported export format. Use .txt, .json, .csv, or .md files.');
+        process.exit(1);
+      }
+
+      console.log(`✅ Exported tasks to ${filePath}`);
+
+      if (result.pending !== undefined) {
+        console.log(`📋 ${result.pending} pending, ✅ ${result.completed} completed`);
+      } else {
+        console.log(`📋 ${result.total} tasks exported`);
+      }
+    } catch (error) {
+      console.error('❌ Error exporting tasks:', error.message);
       process.exit(1);
     }
   });

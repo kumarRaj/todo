@@ -388,13 +388,150 @@ function hideEmptyState() {
 }
 
 async function handleImportTasks() {
-    // Placeholder for import functionality
-    alert('Import functionality will be implemented in the next phase');
+    try {
+        const result = await ipcRenderer.invoke('import-tasks');
+
+        if (!result) {
+            // User canceled
+            return;
+        }
+
+        if (!result.success) {
+            alert('Import failed: ' + result.error);
+            return;
+        }
+
+        // Show success message
+        const message = `Successfully imported ${result.count} tasks!\n` +
+                       `📋 ${result.pending} pending\n` +
+                       `✅ ${result.completed} completed`;
+
+        alert(message);
+
+        // Reload tasks to show imported tasks
+        await loadTasks();
+
+    } catch (error) {
+        console.error('Error importing tasks:', error);
+        alert('Error importing tasks: ' + error.message);
+    }
 }
 
 async function handleExportTasks() {
-    // Placeholder for export functionality
-    alert('Export functionality will be implemented in the next phase');
+    try {
+        // Show export format dialog
+        const format = await showExportFormatDialog();
+        if (!format) return;
+
+        const includeCompleted = format.includeCompleted;
+        const fileFormat = format.format;
+
+        const result = await ipcRenderer.invoke('export-tasks', fileFormat, includeCompleted);
+
+        if (!result) {
+            // User canceled
+            return;
+        }
+
+        if (!result.success) {
+            alert('Export failed: ' + result.error);
+            return;
+        }
+
+        // Show success message
+        let message = `Successfully exported to:\n${result.filePath}\n\n`;
+
+        if (result.pending !== undefined) {
+            message += `📋 ${result.pending} pending, ✅ ${result.completed} completed`;
+        } else {
+            message += `📋 ${result.total} tasks exported`;
+        }
+
+        alert(message);
+
+    } catch (error) {
+        console.error('Error exporting tasks:', error);
+        alert('Error exporting tasks: ' + error.message);
+    }
+}
+
+function showExportFormatDialog() {
+    return new Promise((resolve) => {
+        // Create a simple dialog overlay
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        `;
+
+        const dialog = document.createElement('div');
+        dialog.style.cssText = `
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            min-width: 300px;
+        `;
+
+        dialog.innerHTML = `
+            <h3 style="margin: 0 0 16px 0; font-size: 18px;">Export Tasks</h3>
+
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500;">Format:</label>
+                <select id="format-select" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="txt">Text (.txt)</option>
+                    <option value="json">JSON (.json)</option>
+                    <option value="csv">CSV (.csv)</option>
+                    <option value="md">Markdown (.md)</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="include-completed" checked>
+                    <span>Include completed tasks</span>
+                </label>
+            </div>
+
+            <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                <button id="cancel-btn" style="padding: 8px 16px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer;">Cancel</button>
+                <button id="export-btn" style="padding: 8px 16px; border: none; background: #007AFF; color: white; border-radius: 4px; cursor: pointer;">Export</button>
+            </div>
+        `;
+
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+
+        // Event handlers
+        dialog.querySelector('#cancel-btn').addEventListener('click', () => {
+            document.body.removeChild(overlay);
+            resolve(null);
+        });
+
+        dialog.querySelector('#export-btn').addEventListener('click', () => {
+            const format = dialog.querySelector('#format-select').value;
+            const includeCompleted = dialog.querySelector('#include-completed').checked;
+
+            document.body.removeChild(overlay);
+            resolve({ format, includeCompleted });
+        });
+
+        // Close on overlay click
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                document.body.removeChild(overlay);
+                resolve(null);
+            }
+        });
+    });
 }
 
 // Global functions for onclick handlers
