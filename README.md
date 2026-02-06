@@ -132,11 +132,190 @@ Each task will be committed separately to maintain a clear development history a
 
 ## Installation & Setup
 
-*Coming soon after implementation*
+### Prerequisites
+- **Node.js 18+** - [Download from nodejs.org](https://nodejs.org/)
+- **Git** - For cloning the repository
+
+### Quick Start
+
+1. **Clone the repository:**
+   ```bash
+   git clone <repository-url>
+   cd todo-app
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **For Electron desktop app, rebuild native modules:**
+   ```bash
+   npx electron-rebuild
+   ```
+
+4. **Run the application:**
+   ```bash
+   # CLI version
+   node src/cli/index.js --help
+
+   # Desktop GUI version
+   npm start
+   ```
+
+### Installation Methods
+
+#### Method 1: Development Setup
+Best for developers and users who want the latest features:
+
+```bash
+# Clone and setup
+git clone <repository-url>
+cd todo-app
+npm install
+npx electron-rebuild
+
+# Make CLI globally available (optional)
+npm link
+```
+
+#### Method 2: Manual Installation
+For users who prefer manual setup:
+
+1. Download and extract the source code
+2. Open terminal in the extracted folder
+3. Run `npm install` and `npx electron-rebuild`
+4. Use the applications as described in usage section
+
+### Troubleshooting Installation
+
+#### Common Issues:
+
+**1. SQLite compilation errors:**
+```bash
+# Solution: Rebuild for your platform
+npm rebuild better-sqlite3
+# or for Electron:
+npx electron-rebuild
+```
+
+**2. Permission errors (macOS/Linux):**
+```bash
+# Solution: Fix permissions
+sudo chown -R $(whoami) ~/.npm
+```
+
+**3. Node.js version compatibility:**
+```bash
+# Ensure Node.js 18+ is installed
+node --version
+```
+
+## Usage Guide
+
+### CLI Application
+
+The command-line interface provides fast, keyboard-driven task management:
+
+#### Basic Commands
+
+**Add a new task:**
+```bash
+node src/cli/index.js add "Review pull request"
+node src/cli/index.js add "Meeting at 3 PM" --schedule 2026-02-10
+```
+
+**List tasks:**
+```bash
+node src/cli/index.js list              # Pending tasks only
+node src/cli/index.js list --all        # All tasks
+node src/cli/index.js list --completed  # Completed tasks only
+```
+
+**Complete a task:**
+```bash
+node src/cli/index.js complete 1        # Mark first task as done
+node src/cli/index.js done 2             # Alternative syntax
+```
+
+**Change task priority:**
+```bash
+node src/cli/index.js move 3 up         # Move task #3 higher priority
+node src/cli/index.js move 1 down       # Move task #1 lower priority
+```
+
+**Schedule a task:**
+```bash
+node src/cli/index.js schedule 2 2026-02-15  # Schedule task #2 for Feb 15
+```
+
+**Open URLs from tasks:**
+```bash
+node src/cli/index.js open 1            # Open all URLs from task #1
+```
+
+**Import/Export:**
+```bash
+# Import from text file (your existing format)
+node src/cli/index.js import my-todos.txt
+
+# Export to various formats
+node src/cli/index.js export backup.json       # JSON format
+node src/cli/index.js export tasks.md          # Markdown
+node src/cli/index.js export data.csv          # CSV format
+node src/cli/index.js export --no-completed tasks.txt  # Text without completed
+```
+
+#### Make CLI Globally Available
+```bash
+npm link                                # Now use 'todo' command anywhere
+todo add "Global task"
+todo list
+```
+
+### Desktop GUI Application
+
+Launch the desktop application:
+```bash
+npm start
+```
+
+#### GUI Features:
+
+**Adding Tasks:**
+- Type in the input field at the top
+- Optionally select a due date with the date picker
+- Click "Add" or press Enter
+
+**Managing Tasks:**
+- **Complete**: Click the checkbox next to any task
+- **Priority**: Drag and drop tasks to reorder by priority
+- **URLs**: Click any detected URL to open in your default browser
+- **View Modes**: Switch between Pending, All, or Completed views
+
+**Keyboard Shortcuts:**
+- `Cmd+N` (Mac) / `Ctrl+N` (Windows/Linux): Focus on new task input
+- `Enter`: Add new task when input is focused
+
+**Menu Options:**
+- **File → Import Tasks**: Import from text or JSON files
+- **File → Export Tasks**: Export with format options
+- **View → Toggle Developer Tools**: Debug interface (F12)
+
+### Data Storage
+
+**Location:** `~/.todo-app/tasks.db` (SQLite database)
+
+**Backup:** Export regularly using the export functionality:
+```bash
+node src/cli/index.js export backup-$(date +%Y%m%d).json
+```
+
+**Migration:** Use the import feature to migrate from other todo systems
 
 ## Sample Data Migration
 
-The application will support importing your existing todo format:
+Your existing todo format is fully supported:
 ```
 Check for changes in sort pack post merge of dside - https://github.com/zalando-logistics/sort-pack-service/pull/555 - Done
 Sort pack create PR for close LU - Review
@@ -144,10 +323,110 @@ Order bag for Swati - Done
 pg_cron modify to 180 days - Created PR - https://github.com/zalando-logistics/sort-pack-service/pull/570 - IN_PROGRESS
 ```
 
+## Building & Distribution
+
+### Build Desktop Application
+
+Create distributable packages for your platform:
+
+```bash
+# Build for current platform
+npm run build
+
+# Build for specific platforms (requires platform-specific setup)
+npm run build -- --mac
+npm run build -- --win
+npm run build -- --linux
+```
+
+Output will be in the `dist/` directory.
+
+### Cross-Platform Notes
+
+**macOS:**
+- App will be code-signed if certificates are available
+- Creates `.dmg` installer and `.app` bundle
+- Requires macOS for building macOS packages
+
+**Windows:**
+- Creates `.exe` installer and portable version
+- Can be built from any platform with proper setup
+
+**Linux:**
+- Creates `.AppImage` for universal compatibility
+- Also supports `.deb` and `.rpm` packages
+
+### Development
+
+**Project Structure:**
+```
+todo-app/
+├── src/
+│   ├── cli/           # CLI application
+│   ├── gui/           # Electron desktop app
+│   │   ├── main.js    # Electron main process
+│   │   └── renderer/  # Frontend (HTML/CSS/JS)
+│   ├── core/          # Business logic (Task model)
+│   ├── storage/       # Database layer (SQLite)
+│   └── utils/         # Helper utilities
+├── package.json       # Dependencies and scripts
+└── sample-todos.txt   # Example import file
+```
+
+**Running in Development:**
+```bash
+# CLI with auto-reload
+npm run cli
+
+# Desktop with dev tools
+npm run dev
+```
+
+## FAQ
+
+**Q: Where are my tasks stored?**
+A: Tasks are stored locally in `~/.todo-app/tasks.db` using SQLite. No cloud sync required.
+
+**Q: Can I sync between devices?**
+A: Currently, sync is manual via export/import. Cloud sync may be added in future versions.
+
+**Q: Does this work offline?**
+A: Yes! The entire application works offline. No internet connection required.
+
+**Q: How do I backup my data?**
+A: Use the export functionality: `node src/cli/index.js export backup.json`
+
+**Q: Can I import from other todo applications?**
+A: The app supports text and JSON import. You can convert data from other apps to these formats.
+
+**Q: Is my data secure?**
+A: All data stays on your local machine. No telemetry or data collection.
+
 ## Contributing
 
-*Guidelines to be added during development*
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+
+### Development Setup:
+1. Fork the repository
+2. Clone your fork: `git clone <your-fork-url>`
+3. Install dependencies: `npm install`
+4. Make your changes
+5. Test both CLI and desktop apps
+6. Submit a pull request
 
 ## License
 
-*To be determined*
+MIT License - see LICENSE file for details.
+
+## Acknowledgments
+
+- Built with Electron for cross-platform desktop support
+- Uses SQLite (better-sqlite3) for efficient local data storage
+- CLI powered by Commander.js for professional command-line experience
+- Date handling by date-fns for robust date operations
+
+---
+
+**Enjoy your new TODO management system! 🎉**
+
+For support or feature requests, please open an issue on GitHub.
