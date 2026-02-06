@@ -230,6 +230,15 @@ ipcMain.handle('change-task-status', async (event, taskId, newStatus) => {
   }
 });
 
+ipcMain.handle('update-task-priorities', async (event, taskIdOrder) => {
+  try {
+    return taskRepo.updateTaskPriorities(taskIdOrder);
+  } catch (error) {
+    console.error('Error updating task priorities:', error);
+    throw error;
+  }
+});
+
 ipcMain.handle('open-url', async (event, url) => {
   try {
     await shell.openExternal(url);

@@ -176,6 +176,34 @@ body {
     position: relative;
 }
 
+/* Drag handle */
+.drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-right: 12px;
+    color: #9ca3af;
+    cursor: grab;
+    font-size: 12px;
+    line-height: 1;
+    opacity: 0.6;
+    transition: opacity 0.2s ease, color 0.2s ease;
+    flex-shrink: 0;
+    align-self: center;
+}
+
+.drag-handle:hover {
+    opacity: 1;
+    color: #6b7280;
+}
+
+.task-item:active .drag-handle,
+.task-item.dragging .drag-handle {
+    cursor: grabbing;
+}
+
 .task-item:hover {
     background-color: #f9fafb;
 }

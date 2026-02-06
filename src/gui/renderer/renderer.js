@@ -172,6 +172,7 @@ function createTaskElement(task) {
     }
 
     li.innerHTML = `
+        ${task.status !== 'completed' ? '<div class="drag-handle" title="Drag to reorder">⋮⋮</div>' : ''}
         <div class="task-content-container">
             <div class="task-content">${escapeHtml(task.content)}</div>
 
@@ -313,10 +314,28 @@ function setupDragAndDrop() {
     const activeTaskItems = activeTasksList.querySelectorAll('.task-item[draggable="true"]');
 
     activeTaskItems.forEach(item => {
+        // Remove existing listeners first
+        item.removeEventListener('dragstart', handleDragStart);
+        item.removeEventListener('dragover', handleDragOver);
+        item.removeEventListener('drop', handleDrop);
+        item.removeEventListener('dragend', handleDragEnd);
+
+        // Add fresh listeners
         item.addEventListener('dragstart', handleDragStart);
         item.addEventListener('dragover', handleDragOver);
         item.addEventListener('drop', handleDrop);
         item.addEventListener('dragend', handleDragEnd);
+
+        // Prevent child elements from interfering with drag
+        const taskActions = item.querySelector('.task-actions');
+        if (taskActions) {
+            taskActions.addEventListener('mousedown', (e) => {
+                // Allow drag to start from the task content area, not just the actions
+                if (e.target.closest('.delete-btn') || e.target.closest('.task-status')) {
+                    e.stopPropagation();
+                }
+            });
+        }
     });
 }
 
@@ -374,30 +393,16 @@ async function updateTaskPriorities() {
     const taskItems = [...activeTasksList.querySelectorAll('.task-item[draggable="true"]')];
     const newOrder = taskItems.map(item => item.dataset.taskId);
 
-    // Find which task moved and in which direction
-    const oldOrder = activeTasks.map(t => t.id);
-
-    for (let i = 0; i < newOrder.length; i++) {
-        if (newOrder[i] !== oldOrder[i]) {
-            const taskId = newOrder[i];
-            const oldIndex = oldOrder.indexOf(taskId);
-            const direction = i < oldIndex ? 'up' : 'down';
-            const moves = Math.abs(i - oldIndex);
-
-            try {
-                // Make multiple moves to reach desired position
-                for (let j = 0; j < moves; j++) {
-                    await ipcRenderer.invoke('move-task', taskId, direction);
-                }
-                break;
-            } catch (error) {
-                console.error('Error updating task priority:', error);
-            }
-        }
+    try {
+        // Update priorities based on new order
+        await ipcRenderer.invoke('update-task-priorities', newOrder);
+        // Reload tasks to reflect changes
+        await loadTasks();
+    } catch (error) {
+        console.error('Error updating task priorities:', error);
+        // Reload tasks to reset to original order if update failed
+        await loadTasks();
     }
-
-    // Reload tasks to reflect changes
-    await loadTasks();
 }
 
 async function openUrl(url) {

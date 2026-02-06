@@ -203,6 +203,30 @@ class TaskRepository {
   }
 
   /**
+   * Update task priorities based on new order
+   */
+  updateTaskPriorities(taskIdOrder) {
+    if (!this.db) this.initialize();
+
+    // Start transaction for atomic update
+    const updateStmt = this.db.prepare(`
+      UPDATE tasks
+      SET priority = ?, updated_at = ?
+      WHERE id = ?
+    `);
+
+    const transaction = this.db.transaction(() => {
+      taskIdOrder.forEach((taskId, index) => {
+        const now = new Date().toISOString();
+        updateStmt.run(index, now, taskId);
+      });
+    });
+
+    transaction();
+    return true;
+  }
+
+  /**
    * Schedule a task
    */
   scheduleTask(taskId, date) {
@@ -224,9 +248,9 @@ class TaskRepository {
     if (!this.db) this.initialize();
 
     const task = this.getTaskById(taskId);
-    if (!task || task.status !== 'pending') return null;
+    if (!task || task.status === 'completed') return null;
 
-    const allTasks = this.getAllPendingTasks();
+    const allTasks = this.getAllActiveTasks();
     const currentIndex = allTasks.findIndex(t => t.id === taskId);
 
     if (currentIndex === -1) return null;
