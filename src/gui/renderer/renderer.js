@@ -192,9 +192,14 @@ function createTaskElement(task) {
             ` : ''}
         </div>
 
-        <div class="task-status ${task.status}" onclick="showStatusContextMenu(event, '${task.id}')">
-            <span class="status-icon">${statusDisplay.icon}</span>
-            <span>${statusDisplay.label}</span>
+        <div class="task-actions">
+            <div class="task-status ${task.status}" onclick="showStatusContextMenu(event, '${task.id}')">
+                <span class="status-icon">${statusDisplay.icon}</span>
+                <span>${statusDisplay.label}</span>
+            </div>
+            <button class="delete-btn" onclick="deleteTask('${task.id}')" title="Delete task">
+                <span class="delete-icon">🗑️</span>
+            </button>
         </div>
     `;
 
@@ -281,6 +286,26 @@ async function changeTaskStatus(taskId, newStatus) {
     } catch (error) {
         console.error('Error changing task status:', error);
         alert('Error changing task status: ' + error.message);
+    }
+}
+
+async function deleteTask(taskId) {
+    if (!taskId) return;
+
+    // Show confirmation dialog
+    const confirmed = confirm('Are you sure you want to delete this task? This action cannot be undone.');
+    if (!confirmed) {
+        hideContextMenu();
+        return;
+    }
+
+    try {
+        await ipcRenderer.invoke('delete-task', taskId);
+        await loadTasks();
+        hideContextMenu();
+    } catch (error) {
+        console.error('Error deleting task:', error);
+        alert('Error deleting task: ' + error.message);
     }
 }
 
@@ -562,4 +587,5 @@ function showExportFormatDialog() {
 window.toggleSection = toggleSection;
 window.showStatusContextMenu = showStatusContextMenu;
 window.changeTaskStatus = changeTaskStatus;
+window.deleteTask = deleteTask;
 window.openUrl = openUrl;

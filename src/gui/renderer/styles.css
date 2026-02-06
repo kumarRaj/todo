@@ -24,9 +24,11 @@ body {
 
 /* Add task section */
 .add-task-section {
-    padding: 24px 32px 20px;
+    padding: 32px 32px 24px;
     background-color: #ffffff;
     border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: center;
 }
 
 .input-container {
@@ -34,6 +36,7 @@ body {
     gap: 12px;
     align-items: center;
     max-width: 600px;
+    width: 100%;
 }
 
 #task-input {
@@ -85,7 +88,7 @@ body {
 }
 
 .task-section {
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid #d1d5db;
 }
 
 .task-section:last-child {
@@ -168,7 +171,7 @@ body {
     display: flex;
     align-items: flex-start;
     padding: 16px 32px;
-    border-bottom: 1px solid #f9fafb;
+    border-bottom: 1px solid #d1d5db;
     transition: background-color 0.2s ease;
     position: relative;
 }
@@ -267,6 +270,13 @@ body {
     text-decoration: underline;
 }
 
+/* Task actions container */
+.task-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 /* Task status */
 .task-status {
     display: flex;
@@ -310,6 +320,30 @@ body {
     text-align: center;
 }
 
+/* Delete button */
+.delete-btn {
+    background: none;
+    border: none;
+    padding: 6px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+}
+
+.delete-btn:hover {
+    background-color: #fef2f2;
+    opacity: 1;
+}
+
+.delete-btn .delete-icon {
+    font-size: 14px;
+    color: #dc2626;
+}
+
 /* Context menu */
 .context-menu {
     position: fixed;
@@ -340,6 +374,20 @@ body {
     font-size: 14px;
     width: 16px;
     text-align: center;
+}
+
+.context-menu-separator {
+    height: 1px;
+    background-color: #e5e7eb;
+    margin: 8px 0;
+}
+
+.context-menu-item.delete-item {
+    color: #dc2626;
+}
+
+.context-menu-item.delete-item:hover {
+    background-color: #fef2f2;
 }
 
 /* Loading state */
@@ -396,6 +444,12 @@ body {
         flex-direction: column;
         align-items: stretch;
         gap: 12px;
+    }
+
+    .task-actions {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
     }
 
     .task-status {

@@ -307,7 +307,10 @@ class TaskRepository {
     const selectStmt = this.db.prepare(`
       SELECT * FROM tasks
       ORDER BY
-        CASE WHEN status = 'pending' THEN priority ELSE 999999 END,
+        CASE
+          WHEN status = 'completed' THEN 999999
+          ELSE priority
+        END,
         completed_at DESC
     `);
 
