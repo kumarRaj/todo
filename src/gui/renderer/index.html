@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <h1>TODO</h1>
+            <div class="view-controls">
+                <button class="view-btn active" data-view="pending">Pending</button>
+                <button class="view-btn" data-view="all">All</button>
+                <button class="view-btn" data-view="completed">Completed</button>
+            </div>
+        </header>
+
+        <!-- Add Task Section -->
+        <section class="add-task-section">
+            <div class="input-container">
+                <input
+                    type="text"
+                    id="task-input"
+                    placeholder="Add a new task..."
+                    autofocus
+                >
+                <input
+                    type="date"
+                    id="schedule-input"
+                    title="Schedule task (optional)"
+                >
+                <button id="add-btn" class="add-btn">Add</button>
+            </div>
+        </section>
+
+        <!-- Task List -->
+        <main class="task-list-container">
+            <ul id="task-list" class="task-list">
+                <!-- Tasks will be dynamically inserted here -->
+            </ul>
+            <div id="empty-state" class="empty-state hidden">
+                <p>📝 No tasks found</p>
+            </div>
+        </main>
+
+        <!-- Loading State -->
+        <div id="loading" class="loading hidden">
+            <p>Loading tasks...</p>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>
