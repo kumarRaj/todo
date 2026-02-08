@@ -309,11 +309,12 @@ async function editTask(taskId) {
     // Get current task content
     const currentContent = taskContentElement.textContent.trim();
 
-    // Create input element
-    const input = document.createElement('input');
-    input.type = 'text';
+    // Create textarea element for multiline editing
+    const input = document.createElement('textarea');
     input.value = currentContent;
     input.className = 'task-edit-input';
+    input.rows = Math.max(2, Math.min(6, currentContent.split('\n').length)); // Auto-size between 2-6 rows
+    input.style.resize = 'vertical'; // Allow vertical resizing
 
     // Replace content with input
     taskContentElement.style.display = 'none';
@@ -356,12 +357,15 @@ async function editTask(taskId) {
     };
 
     // Event listeners
-    input.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault(); // Prevent default newline behavior
             saveEdit();
         } else if (e.key === 'Escape') {
+            e.preventDefault();
             cancelEdit();
         }
+        // Shift+Enter allows new lines in the textarea
     });
 
     input.addEventListener('blur', saveEdit);

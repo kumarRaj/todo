@@ -432,6 +432,8 @@ body {
     outline: none;
     font-family: inherit;
     margin: 4px 0;
+    min-height: 60px; /* Ensure minimum height for textarea */
+    resize: vertical; /* Allow vertical resizing only */
 }
 
 .task-edit-input:focus {
