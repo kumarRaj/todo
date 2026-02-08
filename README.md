@@ -1,172 +1,19 @@
 # TODO Management Application
 
-A comprehensive TODO management application with both CLI and desktop GUI interfaces, designed for minimalistic and efficient task management.
+A comprehensive, local-first TODO management application with both command-line and desktop interfaces.
 
-## Project Overview
+## ✨ Features
 
-This application provides a dual-interface approach to TODO management:
-- **CLI Application**: Fast command-line interface for power users
-- **Desktop GUI**: Clean, minimalistic desktop application with drag-drop functionality
-- **Cross-platform**: Works on Windows, macOS, and Linux
+- **🖥️ Dual Interface**: Fast CLI for power users, intuitive desktop GUI for visual management
+- **📱 Cross-Platform**: Works on Windows, macOS, and Linux
+- **🔒 Local-First**: All data stored locally in SQLite - no cloud dependencies
+- **🔗 URL Integration**: Auto-detects and opens URLs directly from tasks
+- **📊 Priority Management**: Drag-and-drop reordering with intelligent priority system
+- **📅 Task Scheduling**: Set due dates and organize by time
+- **📤 Import/Export**: Backup data and migrate from other todo systems
+- **🎯 Status Tracking**: Pending → In Progress → Waiting → Completed workflow
 
-## Core Features
-
-### ✅ Basic Functionality
-- Add, view, and complete tasks
-- Free-flow task input (no complex forms)
-- Minimalistic design matching simple text-based todos
-
-### ✅ Priority Management
-- Move tasks up/down based on priority
-- Higher position = higher priority
-- Simple reordering via commands or drag-drop
-
-### ✅ Task States & Tracking
-- Mark tasks as completed with timestamps
-- View all pending tasks
-- Filter completed tasks by date range
-
-### ✅ Scheduling
-- Schedule tasks for specific dates
-- View tasks by due date
-- Date-based filtering and organization
-
-### ✅ URL Integration
-- Auto-detect URLs in task content
-- Click to open URLs directly in browser
-- Support for GitHub PRs, documentation links, etc.
-
-### ✅ Import/Export
-- Import existing todo lists
-- Export for backup or sharing
-- Parse various text-based todo formats
-
-## Technical Architecture
-
-### Technology Stack
-- **Core Framework**: Electron + Node.js
-- **Desktop GUI**: React with minimalistic styling
-- **CLI Interface**: Commander.js
-- **Database**: SQLite with better-sqlite3
-- **Date Management**: date-fns library
-- **URL Handling**: Electron's shell.openExternal()
-
-### Project Structure
-```
-todo-app/
-├── src/
-│   ├── cli/           # CLI commands and interface
-│   ├── gui/           # Electron + React desktop app
-│   ├── core/          # Shared business logic
-│   ├── storage/       # Database layer
-│   └── utils/         # URL detection, date helpers
-├── package.json
-└── electron configs
-```
-
-### Data Model
-```sql
-CREATE TABLE tasks (
-  id TEXT PRIMARY KEY,              -- UUID
-  content TEXT NOT NULL,            -- Todo text
-  priority INTEGER NOT NULL,        -- Order (0 = highest)
-  status TEXT NOT NULL DEFAULT 'pending',  -- 'pending' | 'completed'
-  created_at TEXT NOT NULL,         -- ISO datetime
-  completed_at TEXT,                -- ISO datetime, NULL if pending
-  scheduled_for TEXT,               -- ISO date, NULL if not scheduled
-  updated_at TEXT NOT NULL,         -- For sync/conflict resolution
-  extracted_urls TEXT               -- JSON array of detected URLs
-);
-```
-
-## Example Usage
-
-### CLI Commands
-```bash
-# Add a new task
-todo add "Review https://github.com/zalando-logistics/sort-pack-service/pull/555"
-
-# List all pending tasks
-todo list
-
-# Complete a task
-todo complete 1
-
-# Move task priority
-todo move 1 up
-todo move 2 down
-
-# Schedule a task
-todo schedule 1 "2024-02-15"
-
-# View completed tasks in date range
-todo completed --from "2024-02-01" --to "2024-02-07"
-```
-
-### Desktop GUI
-- Simple list view with drag-drop reordering
-- Click URLs to open in browser
-- Date picker for scheduling
-- Filter views for pending/completed tasks
-
-## Development Roadmap
-
-### 🔄 Implementation Tasks
-
-- [x] Initialize git repository
-- [ ] Create README.md with comprehensive project plan and todo list
-- [ ] Create project structure and setup development environment
-- [ ] Implement core data layer (storage, models, CRUD operations)
-- [ ] Build CLI application with basic CRUD functionality
-- [ ] Implement priority management (move up/down functionality)
-- [ ] Add task scheduling and date management features
-- [ ] Implement completion tracking and time-range filtering
-- [ ] Build desktop GUI application
-- [ ] Implement URL detection and opening functionality
-- [ ] Add import/export functionality for existing todo lists
-- [ ] Test applications on different platforms
-- [ ] Create user documentation and installation guides
-
-### Progress Tracking
-Each task will be committed separately to maintain a clear development history and enable easy resumption of work.
-
-## Installation & Setup
-
-### Prerequisites
-- **Node.js 18+** - [Download from nodejs.org](https://nodejs.org/)
-- **Git** - For cloning the repository
-
-### Quick Start
-
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
-   cd todo-app
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **For Electron desktop app, rebuild native modules:**
-   ```bash
-   npx electron-rebuild
-   ```
-
-4. **Run the application:**
-   ```bash
-   # CLI version
-   node src/cli/index.js --help
-
-   # Desktop GUI version
-   npm start
-   ```
-
-### Installation Methods
-
-#### Method 1: Development Setup
-Best for developers and users who want the latest features:
+## 🚀 Quick Start
 
 ```bash
 # Clone and setup
@@ -175,396 +22,113 @@ cd todo-app
 npm install
 npx electron-rebuild
 
-# Make CLI globally available (optional)
-npm link
-```
-
-#### Method 2: Manual Installation
-For users who prefer manual setup:
-
-1. Download and extract the source code
-2. Open terminal in the extracted folder
-3. Run `npm install` and `npx electron-rebuild`
-4. Use the applications as described in usage section
-
-### Troubleshooting Installation
-
-#### Common Issues:
-
-**1. SQLite compilation errors:**
-```bash
-# Solution: Rebuild for your platform
-npm rebuild better-sqlite3
-# or for Electron:
-npx electron-rebuild
-```
-
-**2. Permission errors (macOS/Linux):**
-```bash
-# Solution: Fix permissions
-sudo chown -R $(whoami) ~/.npm
-```
-
-**3. Node.js version compatibility:**
-```bash
-# Ensure Node.js 18+ is installed
-node --version
-```
-
-## Usage Guide
-
-### CLI Application
-
-The command-line interface provides fast, keyboard-driven task management:
-
-#### Basic Commands
-
-**Add a new task:**
-```bash
+# CLI Usage
 node src/cli/index.js add "Review pull request"
-node src/cli/index.js add "Meeting at 3 PM" --schedule 2026-02-10
-```
+node src/cli/index.js list
 
-**List tasks:**
-```bash
-node src/cli/index.js list              # Pending tasks only
-node src/cli/index.js list --all        # All tasks
-node src/cli/index.js list --completed  # Completed tasks only
-```
-
-**Complete a task:**
-```bash
-node src/cli/index.js complete 1        # Mark first task as done
-node src/cli/index.js done 2             # Alternative syntax
-```
-
-**Change task priority:**
-```bash
-node src/cli/index.js move 3 up         # Move task #3 higher priority
-node src/cli/index.js move 1 down       # Move task #1 lower priority
-```
-
-**Schedule a task:**
-```bash
-node src/cli/index.js schedule 2 2026-02-15  # Schedule task #2 for Feb 15
-```
-
-**Open URLs from tasks:**
-```bash
-node src/cli/index.js open 1            # Open all URLs from task #1
-```
-
-**Import/Export:**
-```bash
-# Import from text file (your existing format)
-node src/cli/index.js import my-todos.txt
-
-# Export to various formats
-node src/cli/index.js export backup.json       # JSON format
-node src/cli/index.js export tasks.md          # Markdown
-node src/cli/index.js export data.csv          # CSV format
-node src/cli/index.js export --no-completed tasks.txt  # Text without completed
-```
-
-#### Make CLI Globally Available
-```bash
-npm link                                # Now use 'todo' command anywhere
-todo add "Global task"
-todo list
-```
-
-### Desktop GUI Application
-
-Launch the desktop application:
-```bash
+# Desktop GUI
 npm start
 ```
 
-#### GUI Features:
+## 📋 Example Usage
 
-**Adding Tasks:**
-- Type in the input field at the top
-- Optionally select a due date with the date picker
-- Click "Add" or press Enter
-
-**Managing Tasks:**
-- **Complete**: Click the checkbox next to any task
-- **Priority**: Drag and drop tasks to reorder by priority
-- **URLs**: Click any detected URL to open in your default browser
-- **View Modes**: Switch between Pending, All, or Completed views
-
-**Keyboard Shortcuts:**
-- `Cmd+N` (Mac) / `Ctrl+N` (Windows/Linux): Focus on new task input
-- `Enter`: Add new task when input is focused
-
-**Menu Options:**
-- **File → Import Tasks**: Import from text or JSON files
-- **File → Export Tasks**: Export with format options
-- **View → Toggle Developer Tools**: Debug interface (F12)
-
-### Data Storage
-
-**Location:** `~/.todo-app/tasks.db` (SQLite database)
-
-**Backup:** Export regularly using the export functionality:
+### Command Line Interface
 ```bash
-node src/cli/index.js export backup-$(date +%Y%m%d).json
+# Add tasks with URLs and scheduling
+todo add "Review https://github.com/project/repo/pull/123"
+todo add "Team meeting" --schedule 2026-02-15
+
+# Manage priorities and status
+todo move 1 up
+todo complete 2
+todo list --completed
+
+# Import/Export for backup and migration
+todo import my-old-todos.txt
+todo export backup.json
 ```
 
-**Migration:** Use the import feature to migrate from other todo systems
+### Desktop Application
+- **Visual Management**: Drag-and-drop task reordering
+- **One-Click Actions**: Complete, edit, delete with visual feedback
+- **URL Integration**: Click links to open in browser
+- **Status Indicators**: Color-coded task states
+- **Date Picker**: Easy scheduling with calendar interface
 
-## Sample Data Migration
+## 🏗️ Architecture
 
-Your existing todo format is fully supported:
+Built with modern, reliable technologies:
+
+- **🔧 Core Framework**: Electron + Node.js for cross-platform compatibility
+- **🗃️ Database**: SQLite with better-sqlite3 for fast, reliable local storage
+- **⚡ CLI**: Commander.js for professional command-line experience
+- **🎨 GUI**: Vanilla JavaScript with clean, minimal styling
+- **📅 Date Management**: date-fns for robust date operations
+
+### Project Structure
 ```
-Check for changes in sort pack post merge of dside - https://github.com/zalando-logistics/sort-pack-service/pull/555 - Done
-Sort pack create PR for close LU - Review
-Order bag for Swati - Done
-pg_cron modify to 180 days - Created PR - https://github.com/zalando-logistics/sort-pack-service/pull/570 - IN_PROGRESS
+src/
+├── core/          # Task model with business logic
+├── storage/       # SQLite database and repository pattern
+├── cli/           # Command-line interface
+├── gui/           # Electron desktop application
+└── utils/         # Shared utilities (dates, URLs, import/export)
 ```
 
-## Building & Distribution
+## 📚 Documentation
 
-### Build Desktop Application
+| Document | Description |
+|----------|-------------|
+| **[Setup Guide](docs/SETUP.md)** | Installation, prerequisites, and troubleshooting |
+| **[Usage Guide](docs/USAGE.md)** | Detailed CLI and GUI usage instructions |
+| **[FAQ](docs/FAQ.md)** | Frequently asked questions and solutions |
+| **[Deployment](docs/DEPLOYMENT.md)** | Building and distributing the application |
+| **[Contributing](docs/CONTRIBUTING.md)** | Development setup and contribution guidelines |
+| **[Development Guide](CLAUDE.md)** | Architecture and development patterns |
 
-Create distributable packages for your platform:
+## 💾 Data Storage
+
+- **Location**: `~/.todo-app/tasks.db`
+- **Format**: SQLite database
+- **Backup**: Use export functionality regularly
+- **Privacy**: All data stays on your machine
+
+## 🛠️ Development
 
 ```bash
-# Build for current platform
-npm run build
+# Development mode
+npm run dev        # Desktop with developer tools
+npm run cli        # CLI application
 
-# Build for specific platforms (requires platform-specific setup)
-npm run build -- --mac
-npm run build -- --win
-npm run build -- --linux
+# Building
+npm run build      # Create distributable packages
+
+# Testing
+npm test           # Run test suite (when implemented)
 ```
 
-Output will be in the `dist/` directory.
+## 🤝 Contributing
 
-### Installing the Built Application
+Contributions are welcome! Please see our [Contributing Guide](docs/CONTRIBUTING.md) for:
 
-After building, you can install the application system-wide. The build process creates platform-specific packages in the `dist/` directory:
+- Development setup instructions
+- Code organization patterns
+- Testing guidelines
+- Pull request process
 
-- **macOS**: `Todo App.app` (app bundle)
-- **Windows**: `.exe` installer or unpacked executable
-- **Linux**: `.AppImage`, `.deb`, or `.rpm` packages
+## 📄 License
 
-Choose the installation method that works best for your platform:
+MIT License - see [LICENSE](LICENSE) file for details.
 
-#### macOS Installation
+## 🎯 Why This TODO App?
 
-**Method 1: Copy to Applications folder (Recommended)**
-```bash
-# Copy the app bundle to Applications
-cp -R "dist/mac-arm64/Todo App.app" /Applications/
-
-# Or use Finder:
-# 1. Open Finder and navigate to your project's dist/mac-arm64/ folder
-# 2. Drag "Todo App.app" to your Applications folder
-# 3. The app will now be available in Launchpad and Applications
-```
-
-**Method 2: Run from anywhere**
-```bash
-# Make the app executable from any location
-open "dist/mac-arm64/Todo App.app"
-
-# Or double-click the app in Finder
-```
-
-**Method 3: Create an alias/shortcut**
-```bash
-# Create a symlink in Applications (optional)
-ln -s "$(pwd)/dist/mac-arm64/Todo App.app" /Applications/
-
-# This keeps the original in your project but makes it available in Applications
-```
-
-#### Usage After Installation
-
-Once installed in Applications:
-- **Launchpad**: Find "Todo App" in Launchpad
-- **Spotlight**: Press `Cmd+Space` and type "Todo App"
-- **Applications folder**: Open Applications folder and double-click "Todo App"
-- **Dock**: You can drag the app to your Dock for quick access
-
-#### Uninstalling
-
-To remove the application:
-```bash
-# Remove from Applications
-rm -rf "/Applications/Todo App.app"
-
-# Remove app data (optional - this deletes all your tasks!)
-rm -rf ~/.todo-app/
-```
-
-#### Windows Installation
-
-**Method 1: Install using the installer (if built)**
-```cmd
-# If you built with --win, run the installer
-Todo App Setup 1.0.0.exe
-```
-
-**Method 2: Copy executable to Program Files**
-```cmd
-# Copy to Program Files (requires admin privileges)
-xcopy "dist\win-unpacked" "C:\Program Files\Todo App\" /E /I
-
-# Or copy to a local directory
-xcopy "dist\win-unpacked" "C:\Users\%USERNAME%\AppData\Local\Todo App\" /E /I
-```
-
-**Method 3: Run portable version**
-```cmd
-# Navigate to the built directory and run directly
-cd dist\win-unpacked
-"Todo App.exe"
-```
-
-#### Linux Installation
-
-**Method 1: Install AppImage (Universal)**
-```bash
-# Make the AppImage executable
-chmod +x "dist/Todo App-1.0.0.AppImage"
-
-# Move to local applications directory
-mv "dist/Todo App-1.0.0.AppImage" ~/.local/bin/todo-app
-
-# Or move to system-wide location (requires sudo)
-sudo mv "dist/Todo App-1.0.0.AppImage" /usr/local/bin/todo-app
-```
-
-**Method 2: Install package (if built)**
-```bash
-# For .deb packages (Ubuntu/Debian)
-sudo dpkg -i "dist/Todo App_1.0.0_amd64.deb"
-
-# For .rpm packages (Red Hat/CentOS/Fedora)
-sudo rpm -i "dist/Todo App-1.0.0.x86_64.rpm"
-```
-
-**Method 3: Manual installation**
-```bash
-# Copy to local applications
-cp -r "dist/linux-unpacked" ~/.local/share/todo-app
-
-# Create desktop entry
-cat > ~/.local/share/applications/todo-app.desktop << EOF
-[Desktop Entry]
-Name=Todo App
-Exec=$HOME/.local/share/todo-app/todo-app
-Icon=$HOME/.local/share/todo-app/icon.png
-Type=Application
-Categories=Productivity;
-EOF
-```
-
-### Installation Troubleshooting
-
-**macOS:**
-- **"App is damaged"**: Right-click the app → "Open" → "Open" again
-- **Security warning**: System Preferences → Security & Privacy → "Open Anyway"
-- **Permission denied**: `sudo cp -R "dist/mac-arm64/Todo App.app" /Applications/`
-
-**Windows:**
-- **Windows Defender**: Add exception or click "More info" → "Run anyway"
-- **Installation fails**: Run installer as Administrator
-- **App won't start**: Install Visual C++ Redistributable
-
-**Linux:**
-- **AppImage won't run**: Install FUSE: `sudo apt install fuse` (Ubuntu/Debian)
-- **Permission denied**: `chmod +x Todo\ App-1.0.0.AppImage`
-- **Missing dependencies**: Install `libgtk-3-0` and `libnss3`
-
-### Cross-Platform Notes
-
-**macOS:**
-- App will be code-signed if certificates are available
-- Creates `.dmg` installer and `.app` bundle
-- Requires macOS for building macOS packages
-
-**Windows:**
-- Creates `.exe` installer and portable version
-- Can be built from any platform with proper setup
-
-**Linux:**
-- Creates `.AppImage` for universal compatibility
-- Also supports `.deb` and `.rpm` packages
-
-### Development
-
-**Project Structure:**
-```
-todo-app/
-├── src/
-│   ├── cli/           # CLI application
-│   ├── gui/           # Electron desktop app
-│   │   ├── main.js    # Electron main process
-│   │   └── renderer/  # Frontend (HTML/CSS/JS)
-│   ├── core/          # Business logic (Task model)
-│   ├── storage/       # Database layer (SQLite)
-│   └── utils/         # Helper utilities
-├── package.json       # Dependencies and scripts
-└── sample-todos.txt   # Example import file
-```
-
-**Running in Development:**
-```bash
-# CLI with auto-reload
-npm run cli
-
-# Desktop with dev tools
-npm run dev
-```
-
-## FAQ
-
-**Q: Where are my tasks stored?**
-A: Tasks are stored locally in `~/.todo-app/tasks.db` using SQLite. No cloud sync required.
-
-**Q: Can I sync between devices?**
-A: Currently, sync is manual via export/import. Cloud sync may be added in future versions.
-
-**Q: Does this work offline?**
-A: Yes! The entire application works offline. No internet connection required.
-
-**Q: How do I backup my data?**
-A: Use the export functionality: `node src/cli/index.js export backup.json`
-
-**Q: Can I import from other todo applications?**
-A: The app supports text and JSON import. You can convert data from other apps to these formats.
-
-**Q: Is my data secure?**
-A: All data stays on your local machine. No telemetry or data collection.
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
-
-### Development Setup:
-1. Fork the repository
-2. Clone your fork: `git clone <your-fork-url>`
-3. Install dependencies: `npm install`
-4. Make your changes
-5. Test both CLI and desktop apps
-6. Submit a pull request
-
-## License
-
-MIT License - see LICENSE file for details.
-
-## Acknowledgments
-
-- Built with Electron for cross-platform desktop support
-- Uses SQLite (better-sqlite3) for efficient local data storage
-- CLI powered by Commander.js for professional command-line experience
-- Date handling by date-fns for robust date operations
+- **Privacy First**: Your tasks stay on your device
+- **No Subscriptions**: Free and open source forever
+- **Dual Interface**: Use CLI for speed, GUI for visual management
+- **Data Portability**: Easy import/export in standard formats
+- **Cross-Platform**: Works everywhere you do
+- **Developer Friendly**: Built by developers, for developers
 
 ---
 
-**Enjoy your new TODO management system! 🎉**
-
-For support or feature requests, please open an issue on GitHub.
+**Ready to get organized? Check out the [Setup Guide](docs/SETUP.md) to get started!** 🚀
