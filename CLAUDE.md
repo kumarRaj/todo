@@ -20,6 +20,12 @@ This is a **dual-interface TODO management application** providing both CLI and 
 ### Platform-Specific Setup
 - `npx electron-rebuild` - Rebuild native modules for current platform (required after install)
 - `npm rebuild better-sqlite3` - Fix SQLite compilation issues if needed
+- `npm run install-mac` - Build and install to Applications folder (macOS only)
+
+### Safety Guidelines
+- **NEVER** use destructive commands like `rm -rf` without explicit user confirmation
+- Always ask before deleting files or directories in user spaces like `/Applications/`
+- When building install scripts, prefer safe copy operations over destructive removal
 
 ### Testing the Application
 - **CLI Testing**: `node src/cli/index.js add "Test task"` then `node src/cli/index.js list`
@@ -170,6 +176,129 @@ SQLite database with single `tasks` table containing:
 - `updateTaskStatus(id, status)` - Change task state
 - `updateTaskPriorities(tasks)` - Batch priority updates for drag-and-drop
 
+## Development Workflow
+
+### Adding New GUI Components
+
+When adding new interactive elements to tasks:
+
+1. **HTML Template**: Add markup to `createTaskElement()` function in `src/gui/renderer/renderer.js`
+2. **CSS Styling**: Add styles to `src/gui/renderer/styles.css` following existing patterns
+3. **Event Handlers**: Create functions and export them to `window` scope for onclick handlers
+4. **State Management**: Use existing patterns - reload tasks after operations, no local state caching
+
+### GUI Component Patterns
+
+**Button Components**:
+```javascript
+<button class="action-btn specific-btn" onclick="functionName('${task.id}')" title="Tooltip">
+    <span class="icon">📄</span>
+</button>
+```
+
+**Conditional Rendering**:
+```javascript
+${task.status !== 'completed' ? `
+    <!-- Content only for active tasks -->
+` : ''}
+```
+
+**Global Function Export**:
+```javascript
+// At end of renderer.js
+window.functionName = functionName;
+```
+
+**CSS Button Pattern**:
+```css
+.action-btn {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+    opacity: 0.7;
+}
+.action-btn:hover {
+    background-color: #f0f9ff;
+    opacity: 1;
+}
+```
+
+### Git Workflow
+
+**Commit Message Format**:
+- Use imperative mood: "Add feature" not "Added feature"
+- Keep first line under 50 characters
+- Include detailed description explaining the "why"
+- Reference line numbers when discussing specific code locations
+
+**Safe Development Practices**:
+- Always test both CLI and GUI interfaces after changes
+- Rebuild native modules (`npx electron-rebuild`) if database operations fail
+- Use `npm run dev` for development with DevTools enabled
+- Test the built app (`npm run build`) before committing major changes
+
+## Recent Features & Implementation Examples
+
+### Up/Down Arrow Task Reordering (Latest)
+
+**Implementation Location**: `src/gui/renderer/renderer.js:197-203`, `src/gui/renderer/styles.css:398-440`
+
+**How it works**:
+- Added conditional arrow buttons (`↑↓`) to active tasks only
+- `moveTaskUp()` and `moveTaskDown()` functions handle reordering logic
+- Uses existing `updateTaskPriorities()` system for persistence
+- Buttons are styled consistently with existing UI patterns
+
+**Code Pattern for Similar Features**:
+```javascript
+// In createTaskElement() function
+${task.status !== 'completed' ? `
+    <button class="move-btn move-up-btn" onclick="moveTaskUp('${task.id}')" title="Move task up">
+        <span class="move-icon">↑</span>
+    </button>
+` : ''}
+
+// Handler function
+async function moveTaskUp(taskId) {
+    // 1. Find task index in current order
+    // 2. Create new order with task moved
+    // 3. Call updateTaskPriorities() with new order
+    // 4. Reload tasks to reflect changes
+}
+
+// Export to global scope
+window.moveTaskUp = moveTaskUp;
+```
+
+**CSS Pattern for Action Buttons**:
+```css
+.move-btn {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+    opacity: 0.7;
+    min-width: 24px;
+    height: 24px;
+}
+.move-btn:hover {
+    background-color: #f0f9ff;
+    opacity: 1;
+}
+```
+
+### Build and Deployment
+
+**macOS Installation**:
+- `npm run install-mac` builds and copies app to `/Applications/`
+- Uses `dist/mac-arm64/Todo App.app` path (ARM64 optimized)
+- **IMPORTANT**: Never use `rm -rf` in scripts without user confirmation
+
 ### Import/Export System
 
 The application supports multiple formats through `src/utils/importExport.js`:
@@ -199,9 +328,16 @@ Task with IN_PROGRESS status - https://example.com - IN_PROGRESS
 - Waiting tasks: Gray background (#f3f4f6) with purple border
 - Context menu for quick status changes
 
-**Drag and Drop**: Reorder active tasks by dragging. Uses `updateTaskPriorities()` for batch priority updates.
+**Task Reordering**: Multiple ways to reorder tasks:
+- **Drag and Drop**: Reorder by dragging tasks to new positions
+- **Up/Down Arrows**: Click ↑↓ arrows for precise single-position moves
+- Both methods use `updateTaskPriorities()` for batch priority updates
 
-**Task Actions**: Each task has edit, status, and delete buttons. Delete requires confirmation.
+**Task Actions**: Each task has action buttons:
+- **Up/Down arrows (↑↓)**: Move task one position up or down (active tasks only)
+- **Edit button (✏️)**: Inline editing with multiline support
+- **Status dropdown**: Quick status changes with visual context menu
+- **Delete button (🗑️)**: Remove task with confirmation dialog
 
 ### Code Organization Best Practices
 
@@ -249,3 +385,55 @@ test/
     ├── importExport.test.js
     └── dateHelpers.test.js
 ```
+
+## Troubleshooting
+
+### Common Issues
+
+**SQLite Module Errors** (`NODE_MODULE_VERSION` mismatch):
+```bash
+npx electron-rebuild
+# If that fails:
+npm rebuild better-sqlite3
+```
+
+**GUI Not Updating After Changes**:
+- Check if functions are exported to `window` scope
+- Verify IPC handlers exist in `main.js` for data operations
+- Ensure `loadTasks()` is called after data modifications
+
+**Build Issues on macOS**:
+- App builds to `dist/mac-arm64/Todo App.app` (not `dist/mac/`)
+- Use full path in copy commands: `"dist/mac-arm64/Todo App.app"`
+- Code signing warnings are normal for development builds
+
+**Database Location**:
+- Production: `~/.todo-app/tasks.db`
+- Always use TaskRepository, never direct SQLite access
+- Database is created automatically on first run
+
+### Quick Debugging
+
+**Check Task Data**:
+```bash
+node src/cli/index.js list
+```
+
+**GUI Developer Tools**:
+```bash
+npm run dev  # Opens with DevTools enabled
+```
+
+**Verify Build Output**:
+```bash
+npm run build
+ls -la dist/
+```
+
+### Making Changes Safely
+
+1. **Test in Development**: `npm run dev` before building
+2. **Test CLI Compatibility**: Ensure changes work in both interfaces
+3. **Check Build Process**: Run `npm run build` to catch build-time errors
+4. **Commit Frequently**: Small, focused commits with clear messages
+5. **Export Global Functions**: All onclick handlers need `window.functionName = functionName`
