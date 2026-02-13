@@ -194,6 +194,14 @@ function createTaskElement(task) {
         </div>
 
         <div class="task-actions">
+            ${task.status !== 'completed' ? `
+                <button class="move-btn move-up-btn" onclick="moveTaskUp('${task.id}')" title="Move task up">
+                    <span class="move-icon">↑</span>
+                </button>
+                <button class="move-btn move-down-btn" onclick="moveTaskDown('${task.id}')" title="Move task down">
+                    <span class="move-icon">↓</span>
+                </button>
+            ` : ''}
             <button class="edit-btn" onclick="editTask('${task.id}')" title="Edit task">
                 <span class="edit-icon edit-icon-left">✏️</span>
             </button>
@@ -669,10 +677,70 @@ function showExportFormatDialog() {
     });
 }
 
+async function moveTaskUp(taskId) {
+    if (!taskId) return;
+
+    try {
+        // Find the task in active tasks
+        const taskIndex = activeTasks.findIndex(task => task.id === taskId);
+        if (taskIndex <= 0) {
+            // Task is already at the top or not found
+            return;
+        }
+
+        // Create new order with this task moved up one position
+        const newActiveTasks = [...activeTasks];
+        const taskToMove = newActiveTasks[taskIndex];
+        newActiveTasks[taskIndex] = newActiveTasks[taskIndex - 1];
+        newActiveTasks[taskIndex - 1] = taskToMove;
+
+        // Update the priorities
+        const newOrder = newActiveTasks.map(task => task.id);
+        await ipcRenderer.invoke('update-task-priorities', newOrder);
+
+        // Reload tasks to reflect changes
+        await loadTasks();
+    } catch (error) {
+        console.error('Error moving task up:', error);
+        alert('Error moving task up: ' + error.message);
+    }
+}
+
+async function moveTaskDown(taskId) {
+    if (!taskId) return;
+
+    try {
+        // Find the task in active tasks
+        const taskIndex = activeTasks.findIndex(task => task.id === taskId);
+        if (taskIndex === -1 || taskIndex >= activeTasks.length - 1) {
+            // Task is already at the bottom or not found
+            return;
+        }
+
+        // Create new order with this task moved down one position
+        const newActiveTasks = [...activeTasks];
+        const taskToMove = newActiveTasks[taskIndex];
+        newActiveTasks[taskIndex] = newActiveTasks[taskIndex + 1];
+        newActiveTasks[taskIndex + 1] = taskToMove;
+
+        // Update the priorities
+        const newOrder = newActiveTasks.map(task => task.id);
+        await ipcRenderer.invoke('update-task-priorities', newOrder);
+
+        // Reload tasks to reflect changes
+        await loadTasks();
+    } catch (error) {
+        console.error('Error moving task down:', error);
+        alert('Error moving task down: ' + error.message);
+    }
+}
+
 // Global functions for onclick handlers
 window.toggleSection = toggleSection;
 window.showStatusContextMenu = showStatusContextMenu;
 window.changeTaskStatus = changeTaskStatus;
 window.editTask = editTask;
 window.deleteTask = deleteTask;
+window.moveTaskUp = moveTaskUp;
+window.moveTaskDown = moveTaskDown;
 window.openUrl = openUrl;
