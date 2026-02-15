@@ -214,7 +214,7 @@ function createTaskElement(task) {
     li.innerHTML = `
         ${task.status !== 'completed' ? '<div class="drag-handle" title="Drag to reorder">⋮⋮</div>' : ''}
         <div class="task-content-container">
-            <div class="task-content">${escapeHtml(task.content)}</div>
+            <div class="task-content">${escapeHtml(stripHashtagsFromContent(task.content))}</div>
 
             ${metaElements.length > 0 ? `
                 <div class="task-meta">
@@ -277,6 +277,11 @@ function getTagClass(tag) {
         default:
             return 'tag-default';
     }
+}
+
+function stripHashtagsFromContent(content) {
+    // Remove hashtags from content for display
+    return content.replace(/#\w+/g, '').replace(/\s+/g, ' ').trim();
 }
 
 function updateTaskCounts() {
