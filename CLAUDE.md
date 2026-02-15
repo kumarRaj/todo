@@ -130,6 +130,7 @@ Build artifacts (ignored by git):
 Located in `src/core/task.js`, this is the central domain model with:
 - **Status Management**: 4-state system with proper transitions
 - **URL Extraction**: Automatic detection and storage of URLs in task content
+- **Tags Extraction**: Automatic hashtag detection and extraction using `/#(\w+)/g` regex
 - **Priority System**: Integer-based priority where lower numbers = higher priority
 - **Scheduling**: Optional date-based scheduling
 - **Audit Trail**: Created, updated, and completion timestamps
@@ -137,12 +138,13 @@ Located in `src/core/task.js`, this is the central domain model with:
 ### Database Schema
 SQLite database with single `tasks` table containing:
 - `id` (TEXT PRIMARY KEY) - UUID
-- `content` (TEXT) - Task description
+- `content` (TEXT) - Task description with hashtags
 - `priority` (INTEGER) - Ordering position
 - `status` (TEXT) - pending/in_progress/waiting/completed
 - `created_at`, `completed_at`, `scheduled_for` (TEXT) - ISO dates
 - `updated_at` (TEXT) - For sync/conflict resolution
 - `extracted_urls` (TEXT) - JSON array of detected URLs
+- `tags` (TEXT) - JSON array of extracted hashtags (added in v1 migration)
 
 ## Development Notes
 
@@ -175,9 +177,12 @@ SQLite database with single `tasks` table containing:
 **Key Methods in TaskRepository**:
 - `getAllTasks()` - Retrieve all tasks
 - `addTask(content, priority)` - Create new task
-- `updateTaskContent(id, content)` - Modify task content with URL re-extraction
+- `updateTaskContent(id, content)` - Modify task content with URL and tag re-extraction
 - `updateTaskStatus(id, status)` - Change task state
 - `updateTaskPriorities(tasks)` - Batch priority updates for drag-and-drop
+- `getTasksFilteredByWorkPersonal(filter)` - Filter tasks by 'work', 'personal', or 'both'
+- `getTasksByTag(tag)` - Get tasks containing a specific tag
+- `getAllTags()` - Retrieve all unique tags from all tasks
 
 ## Development Workflow
 
@@ -245,7 +250,57 @@ window.functionName = functionName;
 
 ## Recent Features & Implementation Examples
 
-### Up/Down Arrow Task Reordering (Latest)
+### Hashtag Tags System with Work/Personal Filtering (Latest)
+
+**Implementation Locations**:
+- Core: `src/core/task.js:52-57` (extractTags method)
+- Database: `src/storage/database.js:134-179` (migrations v1 & v2)
+- Repository: `src/storage/taskRepository.js:380-460` (filtering methods)
+- GUI: `src/gui/renderer/index.html:34-38`, `src/gui/renderer/renderer.js:190-196,271-285`
+- CLI: `src/cli/index.js:34-37` (default tagging)
+
+**How it works**:
+- Automatic hashtag extraction from task content using `/#(\w+)/g` regex
+- Default #work tagging for new tasks when no hashtags present
+- Visual tag badges with color coding (blue #work, green #personal, gray others)
+- 3-state filter toggle (All/Work/Personal) integrated into section header
+- Database migration system preserves existing data while adding tags functionality
+- Clean GUI display hides hashtags from content, showing only as badges below
+
+**Architecture Overview**:
+```javascript
+// Task model extracts tags automatically
+extractTags(content) {
+    const tagRegex = /#(\w+)/g;
+    const matches = content.match(tagRegex) || [];
+    return matches.map(tag => tag.substring(1).toLowerCase());
+}
+
+// Repository filtering method
+getTasksFilteredByWorkPersonal(filter = 'both') {
+    let whereClause = '';
+    if (filter === 'work') {
+        whereClause = `WHERE tags LIKE '%"work"%'`;
+    } else if (filter === 'personal') {
+        whereClause = `WHERE tags LIKE '%"personal"%'`;
+    }
+    // Query with filter applied
+}
+
+// GUI display strips hashtags from content
+stripHashtagsFromContent(content) {
+    return content.replace(/#\w+/g, '').replace(/\s+/g, ' ').trim();
+}
+```
+
+**Key Features**:
+- **Dual Interface Support**: Both CLI and GUI fully support tags
+- **Migration Safety**: Database v1 adds tags column, v2 adds default #work to existing tasks
+- **Visual Hierarchy**: Tags as colored badges separate from task content
+- **Minimal UI Impact**: Filter buttons integrated into existing section header
+- **Future-Proof**: Supports any hashtag but filters on work/personal for simplicity
+
+### Up/Down Arrow Task Reordering
 
 **Implementation Location**: `src/gui/renderer/renderer.js:197-203`, `src/gui/renderer/styles.css:398-440`
 
@@ -342,6 +397,13 @@ Task with IN_PROGRESS status - https://example.com - IN_PROGRESS
 - **Status dropdown**: Quick status changes with visual context menu
 - **Delete button (🗑️)**: Remove task with confirmation dialog
 
+**Tags System**: Hashtag-based categorization with visual indicators:
+- **Automatic Extraction**: #hashtags in content become colored badges
+- **Visual Display**: Clean content with tags shown as colored pills below
+- **Color Coding**: Blue (#work), Green (#personal), Gray (others)
+- **Filter Toggle**: All/Work/Personal buttons integrated in section header
+- **Default Tagging**: New tasks automatically get #work if no tags present
+
 ### Code Organization Best Practices
 
 **File Naming**:
@@ -414,6 +476,8 @@ npm rebuild better-sqlite3
 - Production: `~/.todo-app/tasks.db`
 - Always use TaskRepository, never direct SQLite access
 - Database is created automatically on first run
+- Migrations run automatically on database initialization
+- Current schema version: 2 (v1 adds tags column, v2 adds default #work tags)
 
 ### Quick Debugging
 
