@@ -130,6 +130,53 @@ class DatabaseManager {
         throw error;
       }
     }
+
+    // Migration v2: Add default #work tags to existing tasks
+    if (currentVersion < 2) {
+      console.log('Migrating database to version 2: Adding default #work tags...');
+      try {
+        // Get all tasks that don't have tags or have empty/null tags
+        const tasksNeedingTags = this.db.prepare(`
+          SELECT id, content, tags FROM tasks
+          WHERE tags IS NULL OR tags = '' OR tags = '[]'
+        `).all();
+
+        console.log(`Found ${tasksNeedingTags.length} tasks that need #work tags`);
+
+        if (tasksNeedingTags.length > 0) {
+          const updateStmt = this.db.prepare(`
+            UPDATE tasks
+            SET content = ?, tags = ?, updated_at = ?
+            WHERE id = ?
+          `);
+
+          const transaction = this.db.transaction(() => {
+            tasksNeedingTags.forEach(task => {
+              // Add #work to content if no hashtags exist
+              let newContent = task.content;
+              if (!/#\w+/.test(newContent)) {
+                newContent += ' #work';
+              }
+
+              // Set tags to ['work']
+              const newTags = JSON.stringify(['work']);
+              const updatedAt = new Date().toISOString();
+
+              updateStmt.run(newContent, newTags, updatedAt, task.id);
+            });
+          });
+
+          transaction();
+          console.log(`Updated ${tasksNeedingTags.length} tasks with #work tags`);
+        }
+
+        this.setDatabaseVersion(2);
+        console.log('Migration to version 2 completed successfully');
+      } catch (error) {
+        console.error('Migration to version 2 failed:', error);
+        throw error;
+      }
+    }
   }
 
   /**
