@@ -16,6 +16,9 @@ let tasks = [];
 let activeTasks = [];
 let completedTasks = [];
 
+// Filter state
+let currentFilter = 'both'; // 'both', 'work', 'personal'
+
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     initializeElements();
@@ -53,6 +56,12 @@ function setupEventListeners() {
         }
     });
 
+    // Filter buttons
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    filterButtons.forEach(button => {
+        button.addEventListener('click', handleFilterChange);
+    });
+
     // IPC listeners from main process
     ipcRenderer.on('new-task', () => {
         taskInput.focus();
@@ -63,8 +72,13 @@ function setupEventListeners() {
 }
 
 async function handleAddTask() {
-    const content = taskInput.value.trim();
+    let content = taskInput.value.trim();
     if (!content) return;
+
+    // Add #work tag if no tags are present
+    if (!/#\w+/.test(content)) {
+        content += ' #work';
+    }
 
     try {
         addBtn.disabled = true;
@@ -89,12 +103,30 @@ async function handleAddTask() {
     }
 }
 
+async function handleFilterChange(event) {
+    const newFilter = event.target.getAttribute('data-filter');
+
+    if (newFilter === currentFilter) return;
+
+    // Update current filter
+    currentFilter = newFilter;
+
+    // Update button states
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    filterButtons.forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-filter') === currentFilter);
+    });
+
+    // Reload tasks with new filter
+    await loadTasks();
+}
+
 async function loadTasks() {
     try {
         showLoading(true);
 
-        // Get all tasks and separate by status
-        const allTasks = await ipcRenderer.invoke('get-all-tasks');
+        // Get filtered tasks and separate by status
+        const allTasks = await ipcRenderer.invoke('get-filtered-tasks', currentFilter);
 
         activeTasks = allTasks.filter(task =>
             task.status === 'pending' ||
@@ -153,6 +185,14 @@ function createTaskElement(task) {
     // Add blocked tag if task content contains "blocked"
     if (task.content.toLowerCase().includes('blocked')) {
         metaElements.push(`<span class="task-tag blocked">blocked</span>`);
+    }
+
+    // Add extracted hashtag badges
+    if (task.tags && Array.isArray(task.tags) && task.tags.length > 0) {
+        task.tags.forEach(tag => {
+            const tagClass = getTagClass(tag);
+            metaElements.push(`<span class="task-tag ${tagClass}">#${tag}</span>`);
+        });
     }
 
     // Add progress indicator if task has subtasks (example: "1/3", "0/4")
@@ -226,6 +266,17 @@ function getStatusDisplay(status) {
         'completed': { icon: '✅', label: 'Completed' }
     };
     return statusMap[status] || statusMap['pending'];
+}
+
+function getTagClass(tag) {
+    switch (tag.toLowerCase()) {
+        case 'work':
+            return 'tag-work';
+        case 'personal':
+            return 'tag-personal';
+        default:
+            return 'tag-default';
+    }
 }
 
 function updateTaskCounts() {

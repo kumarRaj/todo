@@ -31,6 +31,11 @@ program
   .option('-s, --schedule <date>', 'Schedule task for specific date (YYYY-MM-DD)')
   .action((content, options) => {
     try {
+      // Add #work tag if no tags are present
+      if (!/#\w+/.test(content)) {
+        content += ' #work';
+      }
+
       const scheduledFor = options.schedule ? parseDate(options.schedule) : null;
       const task = taskRepo.createTask(content, scheduledFor);
 

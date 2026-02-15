@@ -24,8 +24,11 @@ This is a **dual-interface TODO management application** providing both CLI and 
 
 ### Safety Guidelines
 - **NEVER** use destructive commands like `rm -rf` without explicit user confirmation
+- **NEVER** delete databases or user data files without explicit user consent and proper backups
+- **ALWAYS** create backups before performing any database migrations or schema changes that could affect existing data
 - Always ask before deleting files or directories in user spaces like `/Applications/`
 - When building install scripts, prefer safe copy operations over destructive removal
+- Database location: `~/.todo-app/tasks.db` contains all user data - treat with extreme care
 
 ### Testing the Application
 - **CLI Testing**: `node src/cli/index.js add "Test task"` then `node src/cli/index.js list`

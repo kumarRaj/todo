@@ -23,7 +23,8 @@ class Task {
     completedAt = null,
     scheduledFor = null,
     updatedAt = new Date().toISOString(),
-    extractedUrls = []
+    extractedUrls = [],
+    tags = []
   }) {
     this.id = id;
     this.content = content;
@@ -34,6 +35,7 @@ class Task {
     this.scheduledFor = scheduledFor;
     this.updatedAt = updatedAt;
     this.extractedUrls = this.extractUrls(content);
+    this.tags = this.extractTags(content);
   }
 
   /**
@@ -42,6 +44,16 @@ class Task {
   extractUrls(content) {
     const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g;
     return content.match(urlRegex) || [];
+  }
+
+  /**
+   * Extract hashtags from task content using regex
+   */
+  extractTags(content) {
+    const tagRegex = /#(\w+)/g;
+    const matches = content.match(tagRegex) || [];
+    // Remove # prefix and convert to lowercase for consistency
+    return matches.map(tag => tag.substring(1).toLowerCase());
   }
 
   /**
@@ -138,7 +150,8 @@ class Task {
       completedAt: this.completedAt,
       scheduledFor: this.scheduledFor,
       updatedAt: this.updatedAt,
-      extractedUrls: JSON.stringify(this.extractedUrls)
+      extractedUrls: JSON.stringify(this.extractedUrls),
+      tags: JSON.stringify(this.tags)
     };
   }
 
@@ -148,7 +161,8 @@ class Task {
   static fromJSON(data) {
     return new Task({
       ...data,
-      extractedUrls: data.extractedUrls ? JSON.parse(data.extractedUrls) : []
+      extractedUrls: data.extractedUrls ? JSON.parse(data.extractedUrls) : [],
+      tags: data.tags ? JSON.parse(data.tags) : []
     });
   }
 }

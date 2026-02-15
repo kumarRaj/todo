@@ -37,8 +37,8 @@ class TaskRepository {
     const insertStmt = this.db.prepare(`
       INSERT INTO tasks (
         id, content, priority, status, created_at,
-        completed_at, scheduled_for, updated_at, extracted_urls
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        completed_at, scheduled_for, updated_at, extracted_urls, tags
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const taskData = task.toJSON();
@@ -51,7 +51,8 @@ class TaskRepository {
       taskData.completedAt,
       taskData.scheduledFor,
       taskData.updatedAt,
-      taskData.extractedUrls
+      taskData.extractedUrls,
+      taskData.tags
     );
 
     return task;
@@ -235,21 +236,23 @@ class TaskRepository {
     const task = this.getTaskById(taskId);
     if (!task) return null;
 
-    // Update the task content and extract URLs
+    // Update the task content and extract URLs and tags
     task.content = newContent;
     task.extractedUrls = task.extractUrls(newContent);
+    task.tags = task.extractTags(newContent);
     task.updatedAt = new Date().toISOString();
 
     // Update in database
     const updateStmt = this.db.prepare(`
       UPDATE tasks
-      SET content = ?, extracted_urls = ?, updated_at = ?
+      SET content = ?, extracted_urls = ?, tags = ?, updated_at = ?
       WHERE id = ?
     `);
 
     updateStmt.run(
       task.content,
       JSON.stringify(task.extractedUrls),
+      JSON.stringify(task.tags),
       task.updatedAt,
       taskId
     );
@@ -324,7 +327,7 @@ class TaskRepository {
       UPDATE tasks SET
         content = ?, priority = ?, status = ?,
         completed_at = ?, scheduled_for = ?, updated_at = ?,
-        extracted_urls = ?
+        extracted_urls = ?, tags = ?
       WHERE id = ?
     `);
 
@@ -337,6 +340,7 @@ class TaskRepository {
       taskData.scheduledFor,
       taskData.updatedAt,
       taskData.extractedUrls,
+      taskData.tags,
       taskData.id
     );
   }
@@ -371,6 +375,88 @@ class TaskRepository {
 
     const rows = selectStmt.all();
     return rows.map(row => Task.fromJSON(row));
+  }
+
+  /**
+   * Get tasks filtered by work/personal tags
+   * @param {string} filter - 'work', 'personal', or 'both'
+   */
+  getTasksFilteredByWorkPersonal(filter = 'both') {
+    if (!this.db) this.initialize();
+
+    let whereClause = '';
+    let params = [];
+
+    if (filter === 'work') {
+      whereClause = `WHERE tags LIKE '%"work"%'`;
+    } else if (filter === 'personal') {
+      whereClause = `WHERE tags LIKE '%"personal"%'`;
+    }
+    // 'both' filter returns all tasks (no WHERE clause)
+
+    const selectStmt = this.db.prepare(`
+      SELECT * FROM tasks
+      ${whereClause}
+      ORDER BY
+        CASE
+          WHEN status = 'completed' THEN 999999
+          ELSE priority
+        END,
+        completed_at DESC
+    `);
+
+    const rows = selectStmt.all(...params);
+    return rows.map(row => Task.fromJSON(row));
+  }
+
+  /**
+   * Get tasks that contain a specific tag
+   * @param {string} tag - tag to search for
+   */
+  getTasksByTag(tag) {
+    if (!this.db) this.initialize();
+
+    const selectStmt = this.db.prepare(`
+      SELECT * FROM tasks
+      WHERE tags LIKE ?
+      ORDER BY
+        CASE
+          WHEN status = 'completed' THEN 999999
+          ELSE priority
+        END,
+        completed_at DESC
+    `);
+
+    const rows = selectStmt.all(`%"${tag}"%`);
+    return rows.map(row => Task.fromJSON(row));
+  }
+
+  /**
+   * Get all unique tags from all tasks
+   */
+  getAllTags() {
+    if (!this.db) this.initialize();
+
+    const selectStmt = this.db.prepare(`
+      SELECT DISTINCT tags FROM tasks
+      WHERE tags IS NOT NULL AND tags != ''
+    `);
+
+    const rows = selectStmt.all();
+    const allTags = new Set();
+
+    rows.forEach(row => {
+      try {
+        const tags = JSON.parse(row.tags);
+        if (Array.isArray(tags)) {
+          tags.forEach(tag => allTags.add(tag));
+        }
+      } catch (error) {
+        // Skip invalid JSON
+      }
+    });
+
+    return Array.from(allTags).sort();
   }
 
   /**

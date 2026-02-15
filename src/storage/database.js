@@ -35,6 +35,7 @@ class DatabaseManager {
     try {
       this.db = new Database(this.dbPath);
       this.createTables();
+      this.migrate(); // Run migrations before creating indexes
       this.createIndexes();
       console.log(`Database initialized at: ${this.dbPath}`);
     } catch (error) {
@@ -57,7 +58,8 @@ class DatabaseManager {
         completed_at TEXT,
         scheduled_for TEXT,
         updated_at TEXT NOT NULL,
-        extracted_urls TEXT
+        extracted_urls TEXT,
+        tags TEXT
       )
     `;
 
@@ -72,7 +74,8 @@ class DatabaseManager {
       'CREATE INDEX IF NOT EXISTS idx_priority ON tasks(priority, status)',
       'CREATE INDEX IF NOT EXISTS idx_status ON tasks(status)',
       'CREATE INDEX IF NOT EXISTS idx_scheduled ON tasks(scheduled_for)',
-      'CREATE INDEX IF NOT EXISTS idx_completed_range ON tasks(completed_at)'
+      'CREATE INDEX IF NOT EXISTS idx_completed_range ON tasks(completed_at)',
+      'CREATE INDEX IF NOT EXISTS idx_tags ON tasks(tags)'
     ];
 
     indexes.forEach(indexSql => {
@@ -104,9 +107,29 @@ class DatabaseManager {
    * Run database migrations (for future schema updates)
    */
   migrate() {
-    // Placeholder for future migrations
     const currentVersion = this.getDatabaseVersion();
     console.log(`Database version: ${currentVersion}`);
+
+    // Migration v1: Add tags column
+    if (currentVersion < 1) {
+      console.log('Migrating database to version 1: Adding tags column...');
+      try {
+        // Check if tags column already exists
+        const tableInfo = this.db.pragma('table_info(tasks)');
+        const hasTagsColumn = tableInfo.some(column => column.name === 'tags');
+
+        if (!hasTagsColumn) {
+          this.db.exec('ALTER TABLE tasks ADD COLUMN tags TEXT');
+          this.db.exec('CREATE INDEX IF NOT EXISTS idx_tags ON tasks(tags)');
+        }
+
+        this.setDatabaseVersion(1);
+        console.log('Migration to version 1 completed successfully');
+      } catch (error) {
+        console.error('Migration to version 1 failed:', error);
+        throw error;
+      }
+    }
   }
 
   /**

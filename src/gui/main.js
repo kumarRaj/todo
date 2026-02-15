@@ -221,6 +221,15 @@ ipcMain.handle('get-all-tasks', async () => {
   }
 });
 
+ipcMain.handle('get-filtered-tasks', async (event, filter) => {
+  try {
+    return taskRepo.getTasksFilteredByWorkPersonal(filter);
+  } catch (error) {
+    console.error('Error getting filtered tasks:', error);
+    return [];
+  }
+});
+
 ipcMain.handle('change-task-status', async (event, taskId, newStatus) => {
   try {
     return taskRepo.changeTaskStatus(taskId, newStatus);

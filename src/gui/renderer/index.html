@@ -21,6 +21,18 @@
             </div>
         </section>
 
+        <!-- Filter Section -->
+        <section class="filter-section">
+            <div class="filter-container">
+                <span class="filter-label">Filter:</span>
+                <div class="filter-toggle" id="tag-filter">
+                    <button class="filter-btn active" data-filter="both">All</button>
+                    <button class="filter-btn" data-filter="work">Work</button>
+                    <button class="filter-btn" data-filter="personal">Personal</button>
+                </div>
+            </div>
+        </section>
+
         <!-- Task Sections -->
         <main class="task-sections">
             <!-- Active Tasks Section -->
@@ -62,19 +74,19 @@
         <div id="context-menu" class="context-menu hidden">
             <div class="context-menu-item" onclick="changeTaskStatus(contextTaskId, 'pending')">
                 <span class="status-icon">⚪</span>
-                Mark as Pending
+                Pending
             </div>
             <div class="context-menu-item" onclick="changeTaskStatus(contextTaskId, 'in_progress')">
                 <span class="status-icon">🚀</span>
-                Mark as In Progress
+                In Progress
             </div>
             <div class="context-menu-item" onclick="changeTaskStatus(contextTaskId, 'waiting')">
                 <span class="status-icon">🕐</span>
-                Mark as Waiting
+                Waiting
             </div>
             <div class="context-menu-item" onclick="changeTaskStatus(contextTaskId, 'completed')">
                 <span class="status-icon">✅</span>
-                Mark as Completed
+                Completed
             </div>
             <div class="context-menu-separator"></div>
             <div class="context-menu-item" onclick="editTask(contextTaskId)">
