@@ -80,65 +80,39 @@ body {
     cursor: not-allowed;
 }
 
-/* Filter section */
-.filter-section {
-    padding: 16px 32px;
-    background-color: #ffffff;
-    border-bottom: 1px solid #e5e7eb;
-    display: flex;
-    justify-content: center;
-}
-
-.filter-container {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    max-width: 600px;
-    width: 100%;
-}
-
-.filter-label {
-    font-size: 14px;
-    font-weight: 500;
-    color: #6b7280;
-}
-
+/* Filter buttons in section header */
 .filter-toggle {
     display: flex;
-    gap: 0;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    overflow: hidden;
+    gap: 2px;
 }
 
 .filter-btn {
-    padding: 8px 16px;
-    background-color: #ffffff;
-    border: none;
-    font-size: 13px;
+    padding: 4px 12px;
+    background-color: transparent;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    font-size: 12px;
     font-weight: 500;
     color: #6b7280;
     cursor: pointer;
     transition: all 0.2s ease;
-    border-right: 1px solid #e5e7eb;
-}
-
-.filter-btn:last-child {
-    border-right: none;
 }
 
 .filter-btn:hover {
     background-color: #f9fafb;
     color: #374151;
+    border-color: #d1d5db;
 }
 
 .filter-btn.active {
     background-color: #3b82f6;
     color: #ffffff;
+    border-color: #3b82f6;
 }
 
 .filter-btn.active:hover {
     background-color: #2563eb;
+    border-color: #2563eb;
 }
 
 /* Task sections */
