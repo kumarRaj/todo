@@ -14,7 +14,10 @@
     "cli": "node src/cli/index.js",
     "cli:test": "TODO_ENV=test node src/cli/index.js",
     "gui:test": "TODO_ENV=test electron .",
-    "test": "jest"
+    "test": "TODO_ENV=test jest",
+    "test:watch": "TODO_ENV=test jest --watch",
+    "test:unit": "TODO_ENV=test jest test/core test/utils",
+    "test:integration": "TODO_ENV=test jest test/storage test/cli"
   },
   "keywords": [
     "todo",

@@ -430,26 +430,57 @@ Task with IN_PROGRESS status - https://example.com - IN_PROGRESS
 
 ### Testing Strategy
 
-Jest is configured but no tests exist yet. Recommended test structure:
-- **Unit Tests**: Test Task model business logic independently
-- **Integration Tests**: Test TaskRepository with actual SQLite database
-- **CLI Tests**: Mock TaskRepository and test command parsing/output
-- **Import/Export Tests**: Test file format handlers with sample data
-- **E2E Tests**: Test complete workflows through both CLI and GUI interfaces
+**Philosophy: "Touch It, Test It"**
 
-Create test files in `test/` directory matching the source structure:
+This project follows a pragmatic testing approach focused on regression prevention and sustainable development practices:
+
+- **New features**: Write tests first (TDD style)
+- **Bug fixes**: Write a failing test that reproduces the bug, then fix it
+- **Refactoring existing code**: Add tests before making changes
+- **Leave untouched code alone**: No pressure to test everything immediately
+
+**Daily Development Workflow:**
+
+1. **Starting new work**: `npm run test:watch` in background
+2. **New feature**: Write failing test → Implement → Green test
+3. **Bug report**: Write failing test → Fix bug → Verify green
+4. **Before commit**: `npm run test` (full suite)
+5. **Refactor**: Test first, then refactor with confidence
+
+**Test Environment:**
+- All tests use `TODO_ENV=test` for isolated test database
+- Tests automatically use `~/.todo-app/tasks-test.db`
+- Fast feedback loop with Jest watch mode
+- Clear separation between test and production data
+
+**Test Structure:**
 ```
 test/
 ├── core/
-│   └── task.test.js
+│   └── task.test.js              # Task model tests
 ├── storage/
-│   └── taskRepository.test.js
+│   └── taskRepository.test.js    # Repository integration tests
 ├── cli/
-│   └── commands.test.js
-└── utils/
-    ├── importExport.test.js
-    └── dateHelpers.test.js
+│   └── commands.test.js          # CLI command tests
+├── utils/
+│   ├── importExport.test.js      # File format handler tests
+│   ├── dateHelpers.test.js       # Date utility tests
+│   └── urlHelpers.test.js        # URL utility tests
+└── helpers/
+    └── testDatabase.js           # Test database setup utilities
 ```
+
+**Test Categories:**
+- **Unit tests**: Pure functions (URL extraction, date formatting, status validation)
+- **Integration tests**: Repository operations with real test database
+- **Command tests**: CLI workflows end-to-end
+- **Business logic tests**: Task state transitions, validation rules
+
+**Testing Commands:**
+- `npm test` - Run all tests
+- `npm run test:watch` - Run tests in watch mode for development
+- `npm run test:unit` - Run only unit tests (fast)
+- `npm run test:integration` - Run integration tests with database
 
 ## Troubleshooting
 

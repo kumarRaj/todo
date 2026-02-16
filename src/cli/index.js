@@ -279,4 +279,52 @@ program
     }
   });
 
+// Edit a task
+program
+  .command('edit <index> <content>')
+  .description('Edit an existing task')
+  .action((index, content, options) => {
+    try {
+      // Validate content
+      if (!content || content.trim() === '') {
+        console.error('❌ Task content cannot be empty');
+        process.exit(1);
+      }
+
+      // Get all pending tasks to find the task by index
+      const tasks = taskRepo.getAllPendingTasks();
+
+      if (tasks.length === 0) {
+        console.error('❌ No tasks found');
+        process.exit(1);
+      }
+
+      // Convert 1-based index to 0-based
+      const taskIndex = parseInt(index) - 1;
+
+      if (taskIndex < 0 || taskIndex >= tasks.length) {
+        console.error('❌ Task not found. Use a valid task number.');
+        process.exit(1);
+      }
+
+      const taskToEdit = tasks[taskIndex];
+      const updatedTask = taskRepo.updateTaskContent(taskToEdit.id, content);
+
+      if (!updatedTask) {
+        console.error('❌ Failed to update task');
+        process.exit(1);
+      }
+
+      console.log(`✅ Updated task: ${updatedTask.content}`);
+
+      // Show URLs if any were detected
+      if (updatedTask.extractedUrls.length > 0) {
+        console.log(`🔗 URLs detected: ${updatedTask.extractedUrls.join(', ')}`);
+      }
+    } catch (error) {
+      console.error('❌ Error updating task:', error.message);
+      process.exit(1);
+    }
+  });
+
 program.parse();

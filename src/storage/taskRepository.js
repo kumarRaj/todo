@@ -233,6 +233,11 @@ class TaskRepository {
   updateTaskContent(taskId, newContent) {
     if (!this.db) this.initialize();
 
+    // Validate content
+    if (!newContent || newContent.trim() === '') {
+      throw new Error('Task content cannot be empty');
+    }
+
     const task = this.getTaskById(taskId);
     if (!task) return null;
 
