@@ -19,6 +19,9 @@ let completedTasks = [];
 // Filter state
 let currentFilter = 'both'; // 'both', 'work', 'personal'
 
+// Section collapse state
+let sectionStates = {}; // 'active': { collapsed: false }, 'completed': { collapsed: true }
+
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     initializeElements();
@@ -117,6 +120,9 @@ async function handleFilterChange(event) {
         btn.classList.toggle('active', btn.getAttribute('data-filter') === currentFilter);
     });
 
+    // Store current section collapse state before reloading
+    storeSectionState();
+
     // Reload tasks with new filter
     await loadTasks();
 }
@@ -138,6 +144,9 @@ async function loadTasks() {
 
         renderTasks();
         updateTaskCounts();
+
+        // Restore section collapse state after re-rendering
+        restoreSectionState();
 
     } catch (error) {
         console.error('Error loading tasks:', error);
@@ -287,6 +296,48 @@ function stripHashtagsFromContent(content) {
 function updateTaskCounts() {
     activeCount.textContent = activeTasks.length;
     completedCount.textContent = completedTasks.length;
+}
+
+function storeSectionState() {
+    // Store current collapsed state for all sections
+    ['active', 'completed'].forEach(sectionName => {
+        const section = document.querySelector(`#${sectionName}-content`).parentElement;
+        const content = document.querySelector(`#${sectionName}-content`);
+
+        sectionStates[sectionName] = {
+            collapsed: section.classList.contains('collapsed')
+        };
+    });
+}
+
+function restoreSectionState() {
+    // Restore previously stored collapsed state
+    ['active', 'completed'].forEach(sectionName => {
+        const state = sectionStates[sectionName];
+        if (state === undefined) return; // No stored state
+
+        const section = document.querySelector(`#${sectionName}-content`).parentElement;
+        const content = document.querySelector(`#${sectionName}-content`);
+
+        // Set CSS classes to match stored state
+        if (state.collapsed) {
+            section.classList.add('collapsed');
+            content.classList.add('collapsed');
+            content.style.maxHeight = '0';
+        } else {
+            section.classList.remove('collapsed');
+            content.classList.remove('collapsed');
+            // Recalculate maxHeight based on new content
+            content.style.maxHeight = content.scrollHeight + 'px';
+
+            // Clean up inline style after animation
+            setTimeout(() => {
+                if (!content.classList.contains('collapsed')) {
+                    content.style.maxHeight = 'none';
+                }
+            }, 300);
+        }
+    });
 }
 
 function toggleSection(sectionName) {
