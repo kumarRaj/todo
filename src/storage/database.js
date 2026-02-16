@@ -25,7 +25,9 @@ class DatabaseManager {
       fs.mkdirSync(appDir, { recursive: true });
     }
 
-    return path.join(appDir, 'tasks.db');
+    // Use test database when TODO_ENV=test
+    const dbFilename = process.env.TODO_ENV === 'test' ? 'tasks-test.db' : 'tasks.db';
+    return path.join(appDir, dbFilename);
   }
 
   /**
@@ -37,7 +39,7 @@ class DatabaseManager {
       this.createTables();
       this.migrate(); // Run migrations before creating indexes
       this.createIndexes();
-      console.log(`Database initialized at: ${this.dbPath}`);
+      console.log(`Database initialized at: ${this.dbPath}${process.env.TODO_ENV === 'test' ? ' (TEST MODE)' : ''}`);
     } catch (error) {
       console.error('Failed to initialize database:', error);
       throw error;

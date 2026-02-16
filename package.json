@@ -12,6 +12,8 @@
     "build": "electron-builder",
     "install-mac": "npm run build && cp -r \"dist/mac-arm64/Todo App.app\" /Applications/",
     "cli": "node src/cli/index.js",
+    "cli:test": "TODO_ENV=test node src/cli/index.js",
+    "gui:test": "TODO_ENV=test electron .",
     "test": "jest"
   },
   "keywords": [
