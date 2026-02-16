@@ -421,8 +421,12 @@ async function editTask(taskId) {
     const taskContentElement = taskElement.querySelector('.task-content');
     if (!taskContentElement || taskElement.classList.contains('editing')) return;
 
-    // Get current task content
-    const currentContent = taskContentElement.textContent.trim();
+    // Get the original task content with hashtags preserved
+    // Instead of using the stripped display content, find the original content from task data
+    const taskData = [...activeTasks, ...completedTasks].find(task => task.id === taskId);
+    if (!taskData) return;
+
+    const currentContent = taskData.content;
 
     // Create textarea element for multiline editing
     const input = document.createElement('textarea');
