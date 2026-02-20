@@ -1,5 +1,8 @@
 # TODO Management Application
 
+<img width="794" height="596" alt="image" src="https://github.com/user-attachments/assets/fa690bd3-00a7-4b4c-aaa4-c4240090dab3" />
+
+
 A comprehensive, local-first TODO management application with both command-line and desktop interfaces.
 
 ## 🚀 How to Use
