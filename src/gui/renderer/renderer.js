@@ -146,7 +146,10 @@ async function loadTasks() {
         updateTaskCounts();
 
         // Restore section collapse state after re-rendering
-        restoreSectionState();
+        // Use requestAnimationFrame to defer until browser has calculated layout
+        requestAnimationFrame(() => {
+            restoreSectionState();
+        });
 
     } catch (error) {
         console.error('Error loading tasks:', error);
