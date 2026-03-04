@@ -178,6 +178,11 @@ $RECYCLE.BIN/
 *.swo
 *~
 
+# Claude Code
+.claude/
+.codex/
+.specify/
+
 # JetBrains IDEs
 .idea/
 *.iml
