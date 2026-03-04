@@ -535,3 +535,6 @@ ls -la dist/
 3. **Check Build Process**: Run `npm run build` to catch build-time errors
 4. **Commit Frequently**: Small, focused commits with clear messages
 5. **Export Global Functions**: All onclick handlers need `window.functionName = functionName`
+
+## Recent Changes
+- 001-easy-distribution: Added [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
