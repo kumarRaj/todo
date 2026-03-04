@@ -17,7 +17,8 @@
     "test": "TODO_ENV=test jest",
     "test:watch": "TODO_ENV=test jest --watch",
     "test:unit": "TODO_ENV=test jest test/core test/utils",
-    "test:integration": "TODO_ENV=test jest test/storage test/cli"
+    "test:integration": "TODO_ENV=test jest test/storage test/cli",
+    "release": "node scripts/release.js"
   },
   "keywords": [
     "todo",
