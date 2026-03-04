@@ -182,6 +182,7 @@ $RECYCLE.BIN/
 .claude/
 .codex/
 .specify/
+specs/
 
 # JetBrains IDEs
 .idea/
