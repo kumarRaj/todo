@@ -62,7 +62,8 @@
       "package.json"
     ],
     "mac": {
-      "category": "public.app-category.productivity"
+      "category": "public.app-category.productivity",
+      "target": ["zip"]
     },
     "win": {
       "target": "nsis"

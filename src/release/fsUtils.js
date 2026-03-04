@@ -16,28 +16,35 @@ async function findArtifact(platform = 'mac-arm64') {
 
   switch (platform) {
     case 'mac-arm64':
-      // First try to find .dmg in dist directory (most recent)
+      // Look for .zip file first (most reliable), then .dmg, then .app
       const distDir = path.resolve('dist');
       const appPath = path.resolve(MAC_BUILD_PATH);
 
       try {
-        // Look for any .dmg file in dist directory
+        // Look for .zip file in dist directory
         const files = await fs.readdir(distDir);
-        const dmgFile = files.find(f => f.endsWith('-arm64.dmg'));
+        const zipFile = files.find(f => f.endsWith('-arm64-mac.zip'));
 
-        if (dmgFile) {
-          artifactPath = path.join(distDir, dmgFile);
+        if (zipFile) {
+          artifactPath = path.join(distDir, zipFile);
           await fs.access(artifactPath);
         } else {
-          throw new Error('No DMG file found');
+          // Fallback to .dmg if available
+          const dmgFile = files.find(f => f.endsWith('-arm64.dmg'));
+          if (dmgFile) {
+            artifactPath = path.join(distDir, dmgFile);
+            await fs.access(artifactPath);
+          } else {
+            throw new Error('No distributable file found');
+          }
         }
       } catch (error) {
         try {
-          // Fallback to app bundle
+          // Final fallback to app bundle
           await fs.access(appPath);
           artifactPath = appPath;
         } catch (appError) {
-          throw createError('VALIDATION_FAILED', 'No macOS build artifact found', `Checked: ${distDir}/*.dmg, ${appPath}`);
+          throw createError('VALIDATION_FAILED', 'No macOS build artifact found', `Checked: ${distDir}/*.zip, ${distDir}/*.dmg, ${appPath}`);
         }
       }
       break;

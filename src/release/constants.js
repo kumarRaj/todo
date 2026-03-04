@@ -6,7 +6,7 @@ module.exports = {
   // Build paths
   DIST_DIR: 'dist',
   MAC_BUILD_PATH: 'dist/mac-arm64/Todo App.app',
-  MAC_DMG_PATH: 'dist/Todo App-1.0.0-arm64.dmg',
+  MAC_ZIP_PATH: 'dist/Todo App-1.0.0-arm64-mac.zip',
 
   // Supported platforms
   PLATFORMS: {
