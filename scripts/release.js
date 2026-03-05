@@ -16,6 +16,10 @@ const fs = require('fs');
 async function executeRelease(options) {
   try {
     logger.section('Todo App Release Workflow');
+    if (options.debug) {
+      process.env.RELEASE_DEBUG = 'true';
+      logger.info('Debug mode enabled');
+    }
 
     // Phase 1: Validate version
     if (options.releaseVersion) {
@@ -54,7 +58,7 @@ async function executeRelease(options) {
     logger.step('Publishing to GitHub', 3, 4);
 
     // Check GitHub CLI readiness
-    const publishReadiness = await checkPublishReadiness();
+    const publishReadiness = await checkPublishReadiness({ debug: options.debug });
     if (!publishReadiness.ready) {
       if (!publishReadiness.ghInstalled) {
         throw createError('GENERAL_ERROR', 'GitHub CLI (gh) is not installed', 'Install from: https://cli.github.com/');
@@ -69,7 +73,7 @@ async function executeRelease(options) {
     // Check for version conflicts
     if (options.releaseVersion) {
       logger.info(`Checking for version conflicts: ${options.releaseVersion}`);
-      await checkVersionConflict(options.releaseVersion);
+      await checkVersionConflict(options.releaseVersion, { debug: options.debug });
       logger.success('No version conflicts found');
     }
 
@@ -90,7 +94,8 @@ async function executeRelease(options) {
       title: options.releaseVersion || '1.0.0',
       notes: releaseNotes,
       isDraft: options.draft || false,
-      assetPath: global.releaseArtifact ? global.releaseArtifact.path : null
+      assetPath: global.releaseArtifact ? global.releaseArtifact.path : null,
+      debug: options.debug
     };
 
     logger.info('Creating GitHub release...');
@@ -122,6 +127,7 @@ program
   .option('--notes <file>', 'path to release notes file')
   .option('--draft', 'create as draft release')
   .option('--skip-build', 'skip build phase, use existing artifacts')
+  .option('--debug', 'enable verbose debug logging for GitHub CLI')
   .action(executeRelease);
 
 program.parse();

@@ -18,7 +18,7 @@ module.exports = {
 
   // Timeout values (milliseconds)
   BUILD_TIMEOUT: 300000, // 5 minutes
-  PUBLISH_TIMEOUT: 60000, // 1 minute
+  PUBLISH_TIMEOUT: 600000, // 10 minutes
   GIT_TIMEOUT: 10000,     // 10 seconds
 
   // GitHub CLI settings

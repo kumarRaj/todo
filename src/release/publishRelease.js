@@ -3,17 +3,18 @@
  */
 
 const { createError } = require('./errors');
+const { PUBLISH_TIMEOUT } = require('./constants');
 const { parseVersion } = require('./version');
 const { checkGhCli, listReleases, createRelease } = require('./githubCli');
 
 /**
  * Check if version already exists on GitHub releases
  */
-async function checkVersionConflict(versionString) {
+async function checkVersionConflict(versionString, options = {}) {
   const parsed = parseVersion(versionString);
 
   try {
-    const releases = await listReleases();
+    const releases = await listReleases(30, options);
 
     const duplicate = releases.find(release =>
       release.tagName === parsed.tag || release.tagName === parsed.clean
@@ -49,14 +50,15 @@ async function publishToGitHub(options) {
     title,
     notes,
     isDraft = false,
-    assetPath = null
+    assetPath = null,
+    debug = false
   } = options;
 
   // Parse version to ensure proper formatting
   const parsed = parseVersion(version);
 
   // Check GitHub CLI is available and authenticated
-  const ghStatus = await checkGhCli();
+  const ghStatus = await checkGhCli({ debug });
 
   if (!ghStatus.installed) {
     throw createError('GENERAL_ERROR', 'GitHub CLI (gh) is not installed', 'Install from: https://cli.github.com/');
@@ -76,7 +78,7 @@ async function publishToGitHub(options) {
       assetPath
     };
 
-    const release = await createRelease(releaseOptions);
+    const release = await createRelease({ ...releaseOptions, debug, timeout: PUBLISH_TIMEOUT });
 
     return {
       version: parsed.clean,
@@ -94,9 +96,9 @@ async function publishToGitHub(options) {
 /**
  * Check if we can publish (gh auth and network connectivity)
  */
-async function checkPublishReadiness() {
+async function checkPublishReadiness(options = {}) {
   try {
-    const ghStatus = await checkGhCli();
+    const ghStatus = await checkGhCli(options);
     return {
       ready: ghStatus.installed && ghStatus.authenticated,
       ghInstalled: ghStatus.installed,
