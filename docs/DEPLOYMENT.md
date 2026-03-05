@@ -160,7 +160,8 @@ EOF
 
 ### macOS
 - App will be code-signed if certificates are available
-- Creates `.dmg` installer and `.app` bundle
+- Creates `.app` bundle via `electron-builder --dir`
+- Creates `.dmg` installer via `npm run build:dmg` (manual `hdiutil` step)
 - Requires macOS for building macOS packages
 
 ### Windows
@@ -188,7 +189,8 @@ Build settings are configured in `package.json` under the `build` section:
       "package.json"
     ],
     "mac": {
-      "category": "public.app-category.productivity"
+      "category": "public.app-category.productivity",
+      "target": ["dir"]
     },
     "win": {
       "target": "nsis"
@@ -207,6 +209,14 @@ Once built, the generated packages can be:
 - Uploaded to release pages on GitHub
 - Distributed through platform-specific app stores
 - Hosted on your own download server
+
+### DMG Build (Local)
+
+```bash
+npm run build:dmg
+```
+
+This command builds the macOS `.app` bundle and then creates a `.dmg` using `hdiutil`. The output DMG is placed in `dist/` and is the artifact used by `npm run release`.
 
 ## Release Process
 

@@ -16,17 +16,19 @@ const execAsync = promisify(exec);
  * Build macOS package using electron-builder
  */
 async function buildMacOS(options = {}) {
-  const { skipBuild = false } = options;
+  const { skipBuild = false, requireDmg = false } = options;
 
   if (skipBuild) {
     // Use existing artifact
-    const artifactPath = await findArtifact('mac-arm64');
+    const artifactPath = await findArtifact('mac-arm64', { requiredType: requireDmg ? 'dmg' : null });
     return await createArtifactInfo(artifactPath);
   }
 
   try {
+    const buildCommand = requireDmg ? 'npm run build:dmg' : 'npm run build';
+
     // Run electron-builder for macOS
-    const { stdout, stderr } = await execAsync('npm run build', {
+    const { stdout, stderr } = await execAsync(buildCommand, {
       timeout: BUILD_TIMEOUT,
       env: {
         ...process.env,
@@ -36,7 +38,7 @@ async function buildMacOS(options = {}) {
     });
 
     // Find the created artifact
-    const artifactPath = await findArtifact('mac-arm64');
+    const artifactPath = await findArtifact('mac-arm64', { requiredType: requireDmg ? 'dmg' : null });
 
     // Create artifact information
     const artifactInfo = await createArtifactInfo(artifactPath);

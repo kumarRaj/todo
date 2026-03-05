@@ -1,6 +1,6 @@
 {
   "name": "todo-app",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A comprehensive TODO management application with CLI and desktop GUI interfaces",
   "main": "src/gui/main.js",
   "bin": {
@@ -10,6 +10,8 @@
     "start": "electron .",
     "dev": "electron . --dev",
     "build": "electron-builder",
+    "build:mac-dir": "npx electron-builder --mac --dir",
+    "build:dmg": "bash scripts/build-dmg-local.sh",
     "install-mac": "npm run build && cp -r \"dist/mac-arm64/Todo App.app\" /Applications/",
     "cli": "node src/cli/index.js",
     "cli:test": "TODO_ENV=test node src/cli/index.js",
@@ -63,7 +65,7 @@
     ],
     "mac": {
       "category": "public.app-category.productivity",
-      "target": ["zip"]
+      "target": ["dir"]
     },
     "win": {
       "target": "nsis"

@@ -34,7 +34,7 @@ async function executeRelease(options) {
       logger.step('Building macOS package', 2, 3);
       logger.info('Running electron-builder...');
 
-      const artifact = await buildMacOS({ skipBuild: false });
+      const artifact = await buildMacOS({ skipBuild: false, requireDmg: true });
       logger.success('Build complete');
       logger.artifact(artifact);
 
@@ -43,7 +43,7 @@ async function executeRelease(options) {
     } else {
       logger.step('Using existing build artifact', 2, 3);
 
-      const artifact = await buildMacOS({ skipBuild: true });
+      const artifact = await buildMacOS({ skipBuild: true, requireDmg: true });
       logger.success('Found existing build artifact');
       logger.artifact(artifact);
 

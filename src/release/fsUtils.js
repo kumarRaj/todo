@@ -6,37 +6,66 @@ const fs = require('fs').promises;
 const path = require('path');
 const crypto = require('crypto');
 const { createError } = require('./errors');
-const { MIN_DMG_SIZE, MAX_DMG_SIZE, MAC_BUILD_PATH, MAC_DMG_PATH } = require('./constants');
+const { MIN_DMG_SIZE, MAX_DMG_SIZE, MAC_BUILD_PATH } = require('./constants');
 
 /**
  * Find build artifact in expected location
  */
-async function findArtifact(platform = 'mac-arm64') {
+async function findArtifact(platform = 'mac-arm64', options = {}) {
   let artifactPath;
+  const { requiredType = null } = options;
 
   switch (platform) {
     case 'mac-arm64':
-      // Look for .zip file first (most reliable), then .dmg, then .app
+      // Look for .dmg first, then .zip, then .app (unless a type is required)
       const distDir = path.resolve('dist');
       const appPath = path.resolve(MAC_BUILD_PATH);
 
       try {
-        // Look for .zip file in dist directory
         const files = await fs.readdir(distDir);
+
+        if (requiredType === 'dmg') {
+          const dmgFiles = files.filter(f => f.endsWith('-arm64.dmg'));
+          if (dmgFiles.length === 0) {
+            throw new Error('No DMG file found');
+          }
+          const dmgWithStats = await Promise.all(
+            dmgFiles.map(async name => {
+              const fullPath = path.join(distDir, name);
+              const stats = await fs.stat(fullPath);
+              return { name, fullPath, mtimeMs: stats.mtimeMs };
+            })
+          );
+          dmgWithStats.sort((a, b) => b.mtimeMs - a.mtimeMs);
+          artifactPath = dmgWithStats[0].fullPath;
+          await fs.access(artifactPath);
+          break;
+        }
+
+        // Look for newest .dmg file in dist directory
+        const dmgFiles = files.filter(f => f.endsWith('-arm64.dmg'));
+        if (dmgFiles.length > 0) {
+          const dmgWithStats = await Promise.all(
+            dmgFiles.map(async name => {
+              const fullPath = path.join(distDir, name);
+              const stats = await fs.stat(fullPath);
+              return { name, fullPath, mtimeMs: stats.mtimeMs };
+            })
+          );
+          dmgWithStats.sort((a, b) => b.mtimeMs - a.mtimeMs);
+          artifactPath = dmgWithStats[0].fullPath;
+          await fs.access(artifactPath);
+          break;
+        }
+
+        // Look for .zip file in dist directory
         const zipFile = files.find(f => f.endsWith('-arm64-mac.zip'));
 
         if (zipFile) {
           artifactPath = path.join(distDir, zipFile);
           await fs.access(artifactPath);
         } else {
-          // Fallback to .dmg if available
-          const dmgFile = files.find(f => f.endsWith('-arm64.dmg'));
-          if (dmgFile) {
-            artifactPath = path.join(distDir, dmgFile);
-            await fs.access(artifactPath);
-          } else {
-            throw new Error('No distributable file found');
-          }
+          throw new Error('No distributable file found');
         }
       } catch (error) {
         try {
@@ -44,7 +73,8 @@ async function findArtifact(platform = 'mac-arm64') {
           await fs.access(appPath);
           artifactPath = appPath;
         } catch (appError) {
-          throw createError('VALIDATION_FAILED', 'No macOS build artifact found', `Checked: ${distDir}/*.zip, ${distDir}/*.dmg, ${appPath}`);
+          const requiredHint = requiredType === 'dmg' ? `${distDir}/*.dmg` : `${distDir}/*.dmg, ${distDir}/*.zip, ${appPath}`;
+          throw createError('VALIDATION_FAILED', 'No macOS build artifact found', `Checked: ${requiredHint}`);
         }
       }
       break;
