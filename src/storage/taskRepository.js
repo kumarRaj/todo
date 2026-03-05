@@ -168,7 +168,13 @@ class TaskRepository {
   }
 
   /**
-   * Change task status
+   * Change task status with automatic priority reordering
+   *
+   * Automatically repositions task based on new status:
+   * - in_progress: moves to priority 0 (top)
+   * - waiting: moves below all in_progress tasks
+   * - pending: moves below all waiting tasks
+   * - completed: moves to bottom
    */
   changeTaskStatus(taskId, status) {
     if (!this.db) this.initialize();
@@ -176,10 +182,107 @@ class TaskRepository {
     const task = this.getTaskById(taskId);
     if (!task) return null;
 
-    task.setStatus(status);
-    this.updateTask(task);
+    const oldStatus = task.status;
 
-    return task;
+    // No change needed if status is the same
+    if (oldStatus === status) {
+      return task;
+    }
+
+    // Calculate the insertion position for the new status
+    const insertionPosition = this.#calculateInsertionPosition(status);
+
+    // Use transaction to ensure atomicity
+    const updateWithReordering = this.db.transaction(() => {
+      // Shift affected tasks in the priority range
+      this.#updatePrioritiesInRange(insertionPosition, status, taskId);
+
+      // Update target task with new status and priority
+      task.setStatus(status);
+      task.priority = insertionPosition;
+      task.updatedAt = new Date().toISOString();
+
+      // Update in database
+      const updateStmt = this.db.prepare(`
+        UPDATE tasks
+        SET status = ?, priority = ?, updated_at = ?
+        WHERE id = ?
+      `);
+
+      updateStmt.run(status, insertionPosition, task.updatedAt, taskId);
+    });
+
+    // Execute transaction
+    updateWithReordering();
+
+    return this.getTaskById(taskId);
+  }
+
+  /**
+   * Calculate where a task should be positioned based on new status
+   * @private
+   */
+  #calculateInsertionPosition(newStatus) {
+    switch(newStatus) {
+      case 'in_progress':
+        // Always at top (priority 0)
+        return 0;
+
+      case 'waiting': {
+        // After all in_progress tasks (find max priority of in_progress)
+        const result = this.db.prepare(`
+          SELECT COALESCE(MAX(priority), -1) as maxPriority
+          FROM tasks
+          WHERE status = 'in_progress'
+        `).get();
+        return result.maxPriority + 1;
+      }
+
+      case 'pending': {
+        // After all waiting tasks (find max priority of waiting)
+        const result = this.db.prepare(`
+          SELECT COALESCE(MAX(priority), -1) as maxPriority
+          FROM tasks
+          WHERE status = 'waiting'
+        `).get();
+        // If no waiting tasks, check in_progress
+        if (result.maxPriority === -1) {
+          const inProgressResult = this.db.prepare(`
+            SELECT COALESCE(MAX(priority), -1) as maxPriority
+            FROM tasks
+            WHERE status = 'in_progress'
+          `).get();
+          return inProgressResult.maxPriority + 1;
+        }
+        return result.maxPriority + 1;
+      }
+
+      case 'completed': {
+        // After all completed tasks
+        const result = this.db.prepare(`
+          SELECT COALESCE(MAX(priority), -1) as maxPriority
+          FROM tasks
+          WHERE status = 'completed'
+        `).get();
+        return result.maxPriority + 1;
+      }
+
+      default:
+        throw new Error(`Unknown status: ${newStatus}`);
+    }
+  }
+
+  /**
+   * Shift priorities for tasks in the affected range
+   * @private
+   */
+  #updatePrioritiesInRange(startPosition, newStatus, excludeTaskId) {
+    // Only shift tasks with the same status as the new status
+    this.db.prepare(`
+      UPDATE tasks
+      SET priority = priority + 1
+      WHERE priority >= ? AND id != ? AND status = ?
+    `).run(startPosition, excludeTaskId, newStatus);
   }
 
   /**

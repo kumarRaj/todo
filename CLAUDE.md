@@ -535,3 +535,10 @@ ls -la dist/
 3. **Check Build Process**: Run `npm run build` to catch build-time errors
 4. **Commit Frequently**: Small, focused commits with clear messages
 5. **Export Global Functions**: All onclick handlers need `window.functionName = functionName`
+
+## Active Technologies
+- Node.js 18+ (JavaScript) + better-sqlite3 (database), Commander.js (CLI), Electron (GUI) (002-auto-priority-reordering)
+- SQLite database (`~/.todo-app/tasks.db`) with task priority column (002-auto-priority-reordering)
+
+## Recent Changes
+- 002-auto-priority-reordering: Added Node.js 18+ (JavaScript) + better-sqlite3 (database), Commander.js (CLI), Electron (GUI)
