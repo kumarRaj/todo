@@ -39,7 +39,17 @@ class DatabaseManager {
       this.createTables();
       this.migrate(); // Run migrations before creating indexes
       this.createIndexes();
-      console.log(`Database initialized at: ${this.dbPath}${process.env.TODO_ENV === 'test' ? ' (TEST MODE)' : ''}`);
+
+      // Warn if using production database outside of test environment
+      const isTestMode = process.env.TODO_ENV === 'test';
+      const isTestDb = this.dbPath.includes('tasks-test.db');
+
+      if (!isTestMode && !isTestDb) {
+        console.log(`⚠️  WARNING: Using PRODUCTION database at: ${this.dbPath}`);
+        console.log(`💡 For development/testing, use: TODO_ENV=test`);
+      } else {
+        console.log(`Database initialized at: ${this.dbPath}${isTestMode ? ' (TEST MODE)' : ''}`);
+      }
     } catch (error) {
       console.error('Failed to initialize database:', error);
       throw error;

@@ -189,11 +189,6 @@ function createTaskElement(task) {
     // Create task metadata elements
     const metaElements = [];
 
-    // Add ASAP tag for high priority tasks (example logic)
-    if (task.priority === 0 && task.status !== 'completed') {
-        metaElements.push(`<span class="task-tag">ASAP</span>`);
-    }
-
     // Add blocked tag if task content contains "blocked"
     if (task.content.toLowerCase().includes('blocked')) {
         metaElements.push(`<span class="task-tag blocked">blocked</span>`);
