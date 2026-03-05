@@ -221,3 +221,11 @@ test-exports.*
 *.backup
 *.old
 *.orig
+
+# Claude Code and project configuration
+.claude/
+.codex/
+.specify/
+specs/
+feature-executor.prose
+DMG_BUILD_ISSUE.md
