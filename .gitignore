@@ -216,10 +216,10 @@ test-exports.*
 *.old
 *.orig
 
-# Claude Code and project configuration
+# Claude Code & Development Tools
 .claude/
 .codex/
 .specify/
 specs/
-feature-executor.prose
 DMG_BUILD_ISSUE.md
+feature-executor.prose
