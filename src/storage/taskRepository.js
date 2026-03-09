@@ -220,6 +220,11 @@ class TaskRepository {
 
   /**
    * Calculate where a task should be positioned based on new status
+   *
+   * Uses JavaScript's private field syntax (#) to enforce true encapsulation.
+   * This prevents accidental external calls and makes the intent clear that this is
+   * an internal implementation detail that should only be used within this class.
+   *
    * @private
    */
   #calculateInsertionPosition(newStatus) {
@@ -274,6 +279,11 @@ class TaskRepository {
 
   /**
    * Shift priorities for tasks in the affected range
+   *
+   * Uses JavaScript's private field syntax (#) to enforce true encapsulation.
+   * This prevents accidental external calls and makes the intent clear that this is
+   * an internal implementation detail that should only be used within this class.
+   *
    * @private
    */
   #updatePrioritiesInRange(startPosition, newStatus, excludeTaskId) {
