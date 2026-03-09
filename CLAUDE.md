@@ -30,10 +30,19 @@ This is a **dual-interface TODO management application** providing both CLI and 
 - When building install scripts, prefer safe copy operations over destructive removal
 - Database location: `~/.todo-app/tasks.db` contains all user data - treat with extreme care
 
+### ⚠️ CRITICAL: Database Safety Protocol
+- **ALWAYS use test database for development**: `TODO_ENV=test npm test` or `TODO_ENV=test node src/cli/index.js <command>`
+- The production database is at `~/.todo-app/tasks.db` - this contains real user data
+- The test database is at `~/.todo-app/tasks-test.db` - use this for all development/testing
+- When clearing/testing database operations, ALWAYS verify `TODO_ENV=test` is set first
+- The application will warn when using production database outside of test mode
+- Never run commands like `rm ~/.todo-app/tasks.db` - always ask user first and create backups
+
 ### Testing the Application
-- **CLI Testing**: `node src/cli/index.js add "Test task"` then `node src/cli/index.js list`
-- **Desktop Testing**: `npm start` launches the GUI
-- **Import Testing**: Create a text file with tasks and use `node src/cli/index.js import filename.txt`
+- **CLI Testing (Safe)**: `TODO_ENV=test node src/cli/index.js add "Test task"`
+- **Desktop Testing**: `npm start` launches the GUI (production database)
+- **Import Testing**: `TODO_ENV=test node src/cli/index.js import filename.txt`
+- **Running Tests**: `npm test` (automatically uses TODO_ENV=test)
 
 ## Project Structure
 
