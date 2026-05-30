@@ -78,9 +78,10 @@ async function handleAddTask() {
     let content = taskInput.value.trim();
     if (!content) return;
 
-    // Add #work tag if no tags are present
+    // Append default tag based on active tab when no hashtag is present
     if (!/#\w+/.test(content)) {
-        content += ' #work';
+        const defaultTag = currentFilter === 'personal' ? '#personal' : '#work';
+        content += ' ' + defaultTag;
     }
 
     try {
@@ -130,6 +131,9 @@ async function handleFilterChange(event) {
 async function loadTasks() {
     try {
         showLoading(true);
+
+        // Store current section collapse state before rendering
+        storeSectionState();
 
         // Get filtered tasks and separate by status
         const allTasks = await ipcRenderer.invoke('get-filtered-tasks', currentFilter);

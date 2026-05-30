@@ -81,7 +81,7 @@ rm -rf ~/.todo-app/
 ### Method 1: Install using the installer (if built)
 ```cmd
 # If you built with --win, run the installer
-Todo App Setup 1.0.0.exe
+Todo App Setup 1.1.0.exe
 ```
 
 ### Method 2: Copy executable to Program Files
@@ -105,22 +105,22 @@ cd dist\win-unpacked
 ### Method 1: Install AppImage (Universal)
 ```bash
 # Make the AppImage executable
-chmod +x "dist/Todo App-1.0.0.AppImage"
+chmod +x "dist/Todo App-1.1.0.AppImage"
 
 # Move to local applications directory
-mv "dist/Todo App-1.0.0.AppImage" ~/.local/bin/todo-app
+mv "dist/Todo App-1.1.0.AppImage" ~/.local/bin/todo-app
 
 # Or move to system-wide location (requires sudo)
-sudo mv "dist/Todo App-1.0.0.AppImage" /usr/local/bin/todo-app
+sudo mv "dist/Todo App-1.1.0.AppImage" /usr/local/bin/todo-app
 ```
 
 ### Method 2: Install package (if built)
 ```bash
 # For .deb packages (Ubuntu/Debian)
-sudo dpkg -i "dist/Todo App_1.0.0_amd64.deb"
+sudo dpkg -i "dist/Todo App_1.1.0_amd64.deb"
 
 # For .rpm packages (Red Hat/CentOS/Fedora)
-sudo rpm -i "dist/Todo App-1.0.0.x86_64.rpm"
+sudo rpm -i "dist/Todo App-1.1.0.x86_64.rpm"
 ```
 
 ### Method 3: Manual installation
@@ -153,7 +153,7 @@ EOF
 
 ### Linux
 - **AppImage won't run**: Install FUSE: `sudo apt install fuse` (Ubuntu/Debian)
-- **Permission denied**: `chmod +x Todo\ App-1.0.0.AppImage`
+- **Permission denied**: `chmod +x Todo\ App-1.1.0.AppImage`
 - **Missing dependencies**: Install `libgtk-3-0` and `libnss3`
 
 ## Cross-Platform Build Notes

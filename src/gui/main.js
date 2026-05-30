@@ -152,6 +152,8 @@ ipcMain.handle('get-tasks', async (event, filter) => {
     switch (filter) {
       case 'pending':
         return taskRepo.getAllPendingTasks();
+      case 'active':
+        return taskRepo.getAllActiveTasks();
       case 'all':
         return taskRepo.getAllTasks();
       case 'completed':
@@ -159,7 +161,7 @@ ipcMain.handle('get-tasks', async (event, filter) => {
         const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
         return taskRepo.getCompletedInRange(startDate, endDate);
       default:
-        return taskRepo.getAllPendingTasks();
+        return taskRepo.getAllActiveTasks();
     }
   } catch (error) {
     console.error('Error getting tasks:', error);
