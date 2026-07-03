@@ -27,18 +27,20 @@
             <div class="task-section">
                 <div class="section-header" onclick="toggleSection('active')">
                     <div class="section-title-container">
-                        <span class="section-toggle">▼</span>
+                        <div class="section-icon">📋</div>
                         <span class="section-title">Active tasks</span>
-                        <span class="task-count" id="active-count">0</span>
                     </div>
-                    <div class="filter-toggle" id="tag-filter">
-                        <button class="filter-btn active" data-filter="work">Work</button>
-                        <button class="filter-btn" data-filter="personal">Personal</button>
-                        <select id="tag-filter-select" class="filter-select">
-                            <option value="all">All tags</option>
-                        </select>
+                    <div class="section-header-right">
+                        <div class="filter-toggle" id="tag-filter">
+                            <button class="filter-btn active" data-filter="work">Work</button>
+                            <button class="filter-btn" data-filter="personal">Personal</button>
+                            <select id="tag-filter-select" class="filter-select">
+                                <option value="all">All tags</option>
+                            </select>
+                        </div>
+                        <span class="section-counter" id="active-count">0</span>
+                        <span class="section-toggle">▼</span>
                     </div>
-                    <div class="section-status">Status</div>
                 </div>
                 <div class="section-content" id="active-content">
                     <ul class="task-list" id="active-tasks">
@@ -51,11 +53,13 @@
             <div class="task-section collapsed">
                 <div class="section-header" onclick="toggleSection('completed')">
                     <div class="section-title-container">
-                        <span class="section-toggle">▶</span>
+                        <div class="section-icon">✅</div>
                         <span class="section-title">Completed tasks</span>
-                        <span class="task-count" id="completed-count">0</span>
                     </div>
-                    <div class="section-status">Status</div>
+                    <div class="section-header-right">
+                        <span class="section-counter" id="completed-count">0</span>
+                        <span class="section-toggle">▼</span>
+                    </div>
                 </div>
                 <div class="section-content collapsed" id="completed-content">
                     <ul class="task-list" id="completed-tasks">

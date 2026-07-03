@@ -229,57 +229,45 @@ function createTaskElement(task) {
     li.dataset.taskId = task.id;
     li.draggable = task.status !== 'completed';
 
-    const statusDisplay = getStatusDisplay(task.status);
-
-    // Create task metadata elements
-    const metaElements = [];
-
-    // Add blocked tag if task content contains "blocked"
+    // Inline tag pills shown next to title
+    const tagPills = [];
     if (task.content.toLowerCase().includes('blocked')) {
-        metaElements.push(`<span class="task-tag blocked">blocked</span>`);
+        tagPills.push(`<span class="task-tag blocked">blocked</span>`);
     }
-
-    // Add extracted hashtag badges
     if (task.tags && Array.isArray(task.tags) && task.tags.length > 0) {
         task.tags.forEach(tag => {
             const tagClass = getTagClass(tag);
-            metaElements.push(`<span class="task-tag ${tagClass}">#${tag}</span>`);
+            tagPills.push(`<span class="task-tag ${tagClass}">#${tag}</span>`);
         });
     }
 
-    // Add progress indicator if task has subtasks (example: "1/3", "0/4")
+    // Meta row (progress, comments)
+    const metaElements = [];
     const progressMatch = task.content.match(/(\d+)\/(\d+)/);
     if (progressMatch) {
         metaElements.push(`<span class="task-progress">${progressMatch[0]}</span>`);
     }
-
-    // Add comment count if task has URLs (using URLs as proxy for engagement)
     if (task.extractedUrls && task.extractedUrls.length > 0) {
-        const commentCount = Math.min(task.extractedUrls.length * 2, 7); // Mock comment count
-        metaElements.push(`
-            <div class="task-comments">
-                💬${commentCount}
-            </div>
-        `);
+        const count = Math.min(task.extractedUrls.length * 2, 7);
+        metaElements.push(`<span class="task-comments">💬 ${count}</span>`);
     }
 
     li.innerHTML = `
-        ${task.status !== 'completed' ? '<div class="drag-handle" title="Drag to reorder">⋮⋮</div>' : ''}
+        <div class="task-checkbox" onclick="handleCheckboxClick(event, '${task.id}', '${task.status}')" title="${task.status}">
+            <span class="task-checkbox-check">✓</span>
+        </div>
         <div class="task-content-container">
-            <div class="task-content">${escapeHtml(stripHashtagsFromContent(task.content))}</div>
+            <div class="task-title-row">
+                <span class="task-content">${escapeHtml(stripHashtagsFromContent(task.content))}</span>
+                ${tagPills.join('')}
+            </div>
 
-            ${metaElements.length > 0 ? `
-                <div class="task-meta">
-                    ${metaElements.join('')}
-                </div>
-            ` : ''}
+            ${metaElements.length > 0 ? `<div class="task-meta">${metaElements.join('')}</div>` : ''}
 
             ${task.extractedUrls && task.extractedUrls.length > 0 ? `
                 <div class="task-urls">
                     ${task.extractedUrls.map(url =>
-                        `<a href="#" class="task-url" onclick="openUrl('${url}')" title="${url}">
-                            🔗 ${shortenUrl(url)}
-                        </a>`
+                        `<a href="#" class="task-url" onclick="openUrl('${url}')" title="${url}">🔗 ${shortenUrl(url)}</a>`
                     ).join('')}
                 </div>
             ` : ''}
@@ -287,23 +275,12 @@ function createTaskElement(task) {
 
         <div class="task-actions">
             ${task.status !== 'completed' ? `
-                <button class="move-btn move-up-btn" onclick="moveTaskUp('${task.id}')" title="Move task up">
-                    <span class="move-icon">↑</span>
-                </button>
-                <button class="move-btn move-down-btn" onclick="moveTaskDown('${task.id}')" title="Move task down">
-                    <span class="move-icon">↓</span>
-                </button>
+                <button class="move-btn" onclick="moveTaskUp('${task.id}')" title="Move up">↑</button>
+                <button class="move-btn" onclick="moveTaskDown('${task.id}')" title="Move down">↓</button>
             ` : ''}
-            <button class="edit-btn" onclick="editTask('${task.id}')" title="Edit task">
-                <span class="edit-icon edit-icon-left">✏️</span>
-            </button>
-            <div class="task-status ${task.status}" onclick="showStatusContextMenu(event, '${task.id}')">
-                <span class="status-icon">${statusDisplay.icon}</span>
-                <span>${statusDisplay.label}</span>
-            </div>
-            <button class="delete-btn" onclick="deleteTask('${task.id}')" title="Delete task">
-                <span class="delete-icon">🗑️</span>
-            </button>
+            <button class="action-btn status-btn" onclick="showStatusContextMenu(event, '${task.id}')" title="Change status">⚡</button>
+            <button class="action-btn" onclick="editTask('${task.id}')" title="Edit task">✏️</button>
+            <button class="action-btn delete-btn" onclick="deleteTask('${task.id}')" title="Delete task">🗑️</button>
         </div>
     `;
 
@@ -860,6 +837,15 @@ async function moveTaskUp(taskId) {
     }
 }
 
+async function handleCheckboxClick(event, taskId, currentStatus) {
+    event.stopPropagation();
+    if (currentStatus === 'completed') {
+        await changeTaskStatus(taskId, 'pending');
+    } else {
+        await changeTaskStatus(taskId, 'completed');
+    }
+}
+
 async function moveTaskDown(taskId) {
     if (!taskId) return;
 
@@ -898,3 +884,4 @@ window.deleteTask = deleteTask;
 window.moveTaskUp = moveTaskUp;
 window.moveTaskDown = moveTaskDown;
 window.openUrl = openUrl;
+window.handleCheckboxClick = handleCheckboxClick;
