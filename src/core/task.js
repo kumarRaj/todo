@@ -50,7 +50,7 @@ class Task {
    * Extract hashtags from task content using regex
    */
   extractTags(content) {
-    const tagRegex = /#(\w+)/g;
+    const tagRegex = /#(\w[\w-]*)/g;
     const matches = content.match(tagRegex) || [];
     // Remove # prefix and convert to lowercase for consistency
     return matches.map(tag => tag.substring(1).toLowerCase());
