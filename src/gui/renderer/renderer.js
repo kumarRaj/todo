@@ -17,7 +17,7 @@ let activeTasks = [];
 let completedTasks = [];
 
 // Filter state
-let currentFilter = 'both'; // 'both', 'work', 'personal'
+let currentFilter = 'work'; // any tag string, or 'all' for no filter
 
 // Section collapse state
 let sectionStates = {}; // 'active': { collapsed: false }, 'completed': { collapsed: true }
@@ -65,6 +65,10 @@ function setupEventListeners() {
         button.addEventListener('click', handleFilterChange);
     });
 
+    // Tag filter dropdown
+    document.getElementById('tag-filter-select')
+        .addEventListener('change', handleTagDropdownChange);
+
     // IPC listeners from main process
     ipcRenderer.on('new-task', () => {
         taskInput.focus();
@@ -78,9 +82,9 @@ async function handleAddTask() {
     let content = taskInput.value.trim();
     if (!content) return;
 
-    // Append default tag based on active tab when no hashtag is present
+    // Append default tag based on active filter when no hashtag is present
     if (!/#\w+/.test(content)) {
-        const defaultTag = currentFilter === 'personal' ? '#personal' : '#work';
+        const defaultTag = (currentFilter !== 'all') ? `#${currentFilter}` : '#work';
         content += ' ' + defaultTag;
     }
 
@@ -112,8 +116,10 @@ async function handleFilterChange(event) {
 
     if (newFilter === currentFilter) return;
 
-    // Update current filter
     currentFilter = newFilter;
+
+    // Reset dropdown to "All tags" when a shortcut button is clicked
+    document.getElementById('tag-filter-select').value = 'all';
 
     // Update button states
     const filterButtons = document.querySelectorAll('.filter-btn');
@@ -121,11 +127,43 @@ async function handleFilterChange(event) {
         btn.classList.toggle('active', btn.getAttribute('data-filter') === currentFilter);
     });
 
-    // Store current section collapse state before reloading
     storeSectionState();
-
-    // Reload tasks with new filter
     await loadTasks();
+}
+
+async function handleTagDropdownChange(event) {
+    const newFilter = event.target.value;
+    if (newFilter === currentFilter) return;
+    currentFilter = newFilter;
+    storeSectionState();
+    await loadTasks();
+}
+
+async function populateTagFilter() {
+    const filterSelect = document.getElementById('tag-filter-select');
+    const tags = await ipcRenderer.invoke('get-all-tags');
+
+    filterSelect.innerHTML = '';
+    tags.forEach(tag => {
+        const option = document.createElement('option');
+        option.value = tag;
+        option.textContent = '#' + tag;
+        filterSelect.appendChild(option);
+    });
+    const allOption = document.createElement('option');
+    allOption.value = 'all';
+    allOption.textContent = 'All tags';
+    filterSelect.appendChild(allOption);
+
+    // Restore selection; fall back to 'work' if tag was removed
+    filterSelect.value = currentFilter;
+    if (filterSelect.value === '') {
+        filterSelect.value = 'work';
+        currentFilter = 'work';
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-filter') === 'work');
+        });
+    }
 }
 
 async function loadTasks() {
@@ -134,6 +172,9 @@ async function loadTasks() {
 
         // Store current section collapse state before rendering
         storeSectionState();
+
+        // Refresh tag dropdown to reflect any tag additions/removals
+        await populateTagFilter();
 
         // Get filtered tasks and separate by status
         const allTasks = await ipcRenderer.invoke('get-filtered-tasks', currentFilter);

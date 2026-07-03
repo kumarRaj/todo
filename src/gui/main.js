@@ -232,6 +232,15 @@ ipcMain.handle('get-filtered-tasks', async (event, filter) => {
   }
 });
 
+ipcMain.handle('get-all-tags', async () => {
+  try {
+    return taskRepo.getAllTags();
+  } catch (error) {
+    console.error('Error getting all tags:', error);
+    return [];
+  }
+});
+
 ipcMain.handle('change-task-status', async (event, taskId, newStatus) => {
   try {
     return taskRepo.changeTaskStatus(taskId, newStatus);

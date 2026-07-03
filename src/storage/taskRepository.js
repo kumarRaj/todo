@@ -496,21 +496,20 @@ class TaskRepository {
   }
 
   /**
-   * Get tasks filtered by work/personal tags
-   * @param {string} filter - 'work', 'personal', or 'both'
+   * Get tasks filtered by tag
+   * @param {string} filter - any tag string, or 'all'/'both' for no filter
    */
-  getTasksFilteredByWorkPersonal(filter = 'both') {
+  getTasksFilteredByWorkPersonal(filter = 'work') {
     if (!this.db) this.initialize();
 
     let whereClause = '';
     let params = [];
 
-    if (filter === 'work') {
-      whereClause = `WHERE tags LIKE '%"work"%'`;
-    } else if (filter === 'personal') {
-      whereClause = `WHERE tags LIKE '%"personal"%'`;
+    if (filter && filter !== 'all' && filter !== 'both') {
+      whereClause = `WHERE tags LIKE ?`;
+      params = [`%"${filter}"%`];
     }
-    // 'both' filter returns all tasks (no WHERE clause)
+    // 'all' / 'both' / falsy → no WHERE clause, return everything
 
     const selectStmt = this.db.prepare(`
       SELECT * FROM tasks
