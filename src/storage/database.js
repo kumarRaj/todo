@@ -6,6 +6,7 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const { performBackup } = require('../utils/backupManager');
 
 class DatabaseManager {
   constructor() {
@@ -50,9 +51,23 @@ class DatabaseManager {
       } else {
         console.log(`Database initialized at: ${this.dbPath}${isTestMode ? ' (TEST MODE)' : ''}`);
       }
+
+      this.runDailyBackup().catch(err => {
+        console.error('Daily backup failed (non-fatal):', err.message);
+      });
     } catch (error) {
       console.error('Failed to initialize database:', error);
       throw error;
+    }
+  }
+
+  async runDailyBackup() {
+    if (process.env.TODO_ENV === 'test') return;
+    const appDir = path.join(os.homedir(), '.todo-app');
+    try {
+      await performBackup(this.db, appDir);
+    } catch (err) {
+      console.error('Daily backup failed (non-fatal):', err.message);
     }
   }
 
