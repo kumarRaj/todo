@@ -310,7 +310,7 @@ function getTagClass(tag) {
 
 function stripHashtagsFromContent(content) {
     // Remove hashtags from content for display
-    return content.replace(/#\w+/g, '').replace(/\s+/g, ' ').trim();
+    return content.replace(/#(\w[\w-]*)/g, '').replace(/\s+/g, ' ').trim();
 }
 
 function updateTaskCounts() {
