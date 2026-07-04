@@ -82,23 +82,41 @@ program
         return;
       }
 
-      console.log('\n📋 Tasks:\n');
-      tasks.forEach((task, index) => {
-        const prefix = options.all ?
-          (task.status === 'pending' ? '⭕' : '✅') :
-          `${index + 1}.`;
-
+      const printTask = (task, prefix) => {
         const scheduled = task.scheduledFor ? ` 📅 ${formatDate(task.scheduledFor)}` : '';
-        const completed = task.completedAt ? ` (completed ${formatDate(task.completedAt)})` : '';
-
-        console.log(`${prefix} ${task.content}${scheduled}${completed}`);
-
+        const completedAt = task.completedAt ? ` (completed ${formatDate(task.completedAt)})` : '';
+        console.log(`${prefix} ${task.content}${scheduled}${completedAt}`);
         if (task.extractedUrls.length > 0) {
-          task.extractedUrls.forEach(url => {
-            console.log(`    🔗 ${url}`);
-          });
+          task.extractedUrls.forEach(url => console.log(`    🔗 ${url}`));
         }
-      });
+      };
+
+      if (options.tag) {
+        const pending = tasks.filter(t => t.status !== 'completed');
+        const completed = tasks.filter(t => t.status === 'completed');
+
+        console.log('\n📋 Tasks:\n');
+        if (pending.length === 0) {
+          console.log('  No pending tasks');
+        } else {
+          pending.forEach((task, i) => printTask(task, `${i + 1}.`));
+        }
+
+        console.log('\n✅ Completed:\n');
+        if (completed.length === 0) {
+          console.log('  No completed tasks');
+        } else {
+          completed.forEach((task, i) => printTask(task, `${i + 1}.`));
+        }
+      } else {
+        console.log('\n📋 Tasks:\n');
+        tasks.forEach((task, index) => {
+          const prefix = options.all ?
+            (task.status === 'pending' ? '⭕' : '✅') :
+            `${index + 1}.`;
+          printTask(task, prefix);
+        });
+      }
       console.log();
     } catch (error) {
       console.error('❌ Error listing tasks:', error.message);
