@@ -59,14 +59,17 @@ program
   .description('List all pending tasks')
   .option('-a, --all', 'Show all tasks (pending and completed)')
   .option('-c, --completed', 'Show only completed tasks')
+  .option('-t, --tag <tag>', 'Filter tasks by tag (e.g. work, personal)')
   .action((options) => {
     try {
       let tasks;
 
-      if (options.all) {
+      if (options.tag) {
+        const tag = options.tag.replace(/^#/, '');
+        tasks = taskRepo.getTasksByTag(tag);
+      } else if (options.all) {
         tasks = taskRepo.getAllTasks();
       } else if (options.completed) {
-        // Show completed tasks from last 30 days
         const endDate = new Date().toISOString();
         const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
         tasks = taskRepo.getCompletedInRange(startDate, endDate);
