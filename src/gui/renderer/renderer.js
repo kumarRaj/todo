@@ -388,7 +388,7 @@ function showStatusContextMenu(event, taskId) {
 
     contextTaskId = taskId;
 
-    const rect = event.target.closest('.task-status').getBoundingClientRect();
+    const rect = event.target.closest('.status-btn').getBoundingClientRect();
 
     contextMenu.style.left = rect.left + 'px';
     contextMenu.style.top = (rect.bottom + 5) + 'px';
@@ -551,7 +551,7 @@ function setupDragAndDrop() {
         if (taskActions) {
             taskActions.addEventListener('mousedown', (e) => {
                 // Allow drag to start from the task content area, not just the actions
-                if (e.target.closest('.delete-btn') || e.target.closest('.task-status')) {
+                if (e.target.closest('.delete-btn') || e.target.closest('.status-btn')) {
                     e.stopPropagation();
                 }
             });
