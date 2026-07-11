@@ -264,6 +264,24 @@ body {
     background-color: #fafafa;
 }
 
+.task-item.in_progress {
+    background-color: #fef3c7;
+    box-shadow: inset 4px 0 0 #f59e0b;
+}
+
+.task-item.in_progress:hover {
+    background-color: #fde68a;
+}
+
+.task-item.waiting {
+    background-color: #f3f4f6;
+    box-shadow: inset 4px 0 0 #8b5cf6;
+}
+
+.task-item.waiting:hover {
+    background-color: #e5e7eb;
+}
+
 .task-item:hover .task-actions {
     opacity: 1;
 }
