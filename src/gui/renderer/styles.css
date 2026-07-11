@@ -265,12 +265,12 @@ body {
 }
 
 .task-item.in_progress {
-    background-color: #fef3c7;
-    box-shadow: inset 4px 0 0 #f59e0b;
+    background-color: #dcfce7;
+    box-shadow: inset 4px 0 0 #22c55e;
 }
 
 .task-item.in_progress:hover {
-    background-color: #fde68a;
+    background-color: #bbf7d0;
 }
 
 .task-item.waiting {
