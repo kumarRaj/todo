@@ -54,7 +54,7 @@ function setupEventListeners() {
 
     // Hide context menu when clicking outside
     document.addEventListener('click', (e) => {
-        if (!contextMenu.contains(e.target)) {
+        if (!contextMenu.contains(e.target) && !e.target.closest('.status-btn')) {
             hideContextMenu();
         }
     });
