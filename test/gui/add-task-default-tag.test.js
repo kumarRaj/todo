@@ -10,11 +10,13 @@
  * Mirrors the exact condition in renderer.js so the test stays coupled to
  * the real behaviour.
  */
+const { hasTaskTag } = require('../../src/gui/renderer/tagHelpers');
+
 function resolveContent(rawContent, currentFilter) {
     const content = rawContent.trim();
     if (!content) return null;
 
-    if (!/#\w+/.test(content)) {
+    if (!hasTaskTag(content)) {
         const defaultTag = currentFilter === 'personal' ? '#personal' : '#work';
         return content + ' ' + defaultTag;
     }
@@ -42,6 +44,12 @@ describe('handleAddTask default tag selection', () => {
 
     test('content with a hashtag on Personal tab is not modified', () => {
         expect(resolveContent('Plan holiday #travel', 'personal')).toBe('Plan holiday #travel');
+    });
+
+    test('Google Docs URL fragments do not suppress the active filter tag', () => {
+        const content = 'Read https://docs.google.com/document/d/1K0U9io3JT7WikjsakzRqT_fFrX3kpvtilwDkO79BJ2w/edit?tab=t.0#heading=h.dyjivdu87jmz';
+
+        expect(resolveContent(content, 'work')).toBe(`${content} #work`);
     });
 
     test('empty content returns null (rejected without IPC call)', () => {

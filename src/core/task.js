@@ -4,6 +4,7 @@
 
 const { v4: uuidv4 } = require('uuid');
 const { format, parseISO } = require('date-fns');
+const { extractTaskTags } = require('../gui/renderer/tagHelpers');
 
 class Task {
   // Valid task statuses
@@ -50,10 +51,7 @@ class Task {
    * Extract hashtags from task content using regex
    */
   extractTags(content) {
-    const tagRegex = /#(\w[\w-]*)/g;
-    const matches = content.match(tagRegex) || [];
-    // Remove # prefix and convert to lowercase for consistency
-    return matches.map(tag => tag.substring(1).toLowerCase());
+    return extractTaskTags(content);
   }
 
   /**

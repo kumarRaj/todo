@@ -83,7 +83,7 @@ async function handleAddTask() {
     if (!content) return;
 
     // Append default tag based on active filter when no hashtag is present
-    if (!/#\w+/.test(content)) {
+    if (!window.tagHelpers.hasTaskTag(content)) {
         const defaultTag = (currentFilter !== 'all') ? `#${currentFilter}` : '#work';
         content += ' ' + defaultTag;
     }

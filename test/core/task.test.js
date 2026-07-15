@@ -125,6 +125,14 @@ describe('Task Model - Content and Extraction Logic', () => {
       expect(task.tags).toContain('review');
     });
 
+    it('should not treat URL fragments as task tags', () => {
+      const task = new Task({
+        content: 'Read https://docs.google.com/document/d/1K0U9io3JT7WikjsakzRqT_fFrX3kpvtilwDkO79BJ2w/edit?tab=t.0#heading=h.dyjivdu87jmz'
+      });
+
+      expect(task.tags).toEqual([]);
+    });
+
     it('should ignore hashtags that are not word characters', () => {
       // Arrange & Act
       const task = new Task({
