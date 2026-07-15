@@ -3,6 +3,7 @@
  */
 
 const { ipcRenderer } = require('electron');
+const { formatTaskCreationDate } = require('../../utils/dateHelpers');
 
 // DOM elements
 let taskInput, addBtn, loading;
@@ -228,6 +229,7 @@ function createTaskElement(task) {
     li.className = `task-item ${task.status}`;
     li.dataset.taskId = task.id;
     li.draggable = task.status !== 'completed';
+    li.title = formatTaskCreationDate(task.createdAt);
 
     // Inline tag pills shown next to title
     const tagPills = [];

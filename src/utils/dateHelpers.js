@@ -34,6 +34,18 @@ function formatDate(dateInput) {
 }
 
 /**
+ * Format a task creation date for a compact hover tooltip.
+ */
+function formatTaskCreationDate(dateInput) {
+  try {
+    const date = typeof dateInput === 'string' ? parseISO(dateInput) : dateInput;
+    return isValid(date) ? format(date, 'dd MMM yyyy') : '';
+  } catch (error) {
+    return '';
+  }
+}
+
+/**
  * Parse date from string input
  */
 function parseDate(dateString) {
@@ -93,6 +105,7 @@ function getRelativeDate(dateString) {
 
 module.exports = {
   formatDate,
+  formatTaskCreationDate,
   parseDate,
   isToday,
   isPast,
