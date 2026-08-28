@@ -29,7 +29,7 @@
   "author": "Raj Kumar",
   "license": "MIT",
   "dependencies": {
-    "better-sqlite3": "^11.10.0",
+    "better-sqlite3": "^13.0.3",
     "commander": "^11.1.0",
     "date-fns": "^2.30.0",
     "react": "^18.2.0",
@@ -37,8 +37,8 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.7",
-    "@types/node": "^20.8.10",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.4.0",
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
     "@types/uuid": "^9.0.6",
@@ -48,7 +48,7 @@
     "typescript": "^5.2.2"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
   "build": {
     "appId": "com.raj.todo-app",
